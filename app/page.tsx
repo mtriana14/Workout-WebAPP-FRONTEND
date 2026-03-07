@@ -1,5 +1,5 @@
 "use client"; 
-
+import { BrowserRouter,Routes,Route } from "react-router-dom";
 import { useState, useEffect } from "react";
 
 
@@ -179,13 +179,13 @@ export default function LandingPage() {
             {/* Desktop center links */}
             <ul className="hh-desktop-nav" style={styles.navLinks} role="list">
               <li><a href="#features" style={styles.navLink}>Features</a></li>
-              <li><a href="#login"    style={styles.navLink}>Log in</a></li>
+              <li><a href="/auth/login"    style={styles.navLink}>Log in</a></li>
             </ul>
 
             {/* Desktop right actions */}
             <div className="hh-desktop-nav" style={styles.navActions}>
-              <a href="#login"  style={styles.btnGhost}>Log in</a>
-              <a href="#signup" style={styles.btnPrimary}>Start Training</a>
+              <a href="/auth/login"  style={styles.btnGhost}>Log in</a>
+              <a href="/auth/signup" style={styles.btnPrimary}>Start Training</a>
             </div>
 
             {/* Hamburger */}
@@ -210,8 +210,8 @@ export default function LandingPage() {
           aria-label="Mobile navigation"
         >
           <a href="#features" style={styles.mobileLink} onClick={() => setMenuOpen(false)}>Features</a>
-          <a href="#login"    style={styles.mobileLink} onClick={() => setMenuOpen(false)}>Log in</a>
-          <a href="#signup"   style={{ ...styles.btnPrimary, height: 44, padding: "0 24px", fontSize: 16 }}
+          <a href="/auth/login"    style={styles.mobileLink} onClick={() => setMenuOpen(false)}>Log in</a>
+          <a href="/auth/signup"   style={{ ...styles.btnPrimary, height: 44, padding: "0 24px", fontSize: 16 }}
              onClick={() => setMenuOpen(false)}>
             Start Training
           </a>
@@ -233,7 +233,7 @@ export default function LandingPage() {
               HeraHealth is the all-in-one performance platform built for serious results.
             </p>
             <div style={{ marginTop: 16 }}>
-              <a href="#signup" style={styles.btnPrimaryLg}>
+              <a href="/auth/signup" style={styles.btnPrimaryLg}>
                 Start Training
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                   <path d="M3 8H13M13 8L9 4M13 8L9 12" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
