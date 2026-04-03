@@ -4,15 +4,15 @@ import { useEffect, useState } from "react";
 
 import { MemberPortalShell } from "@/app/components/memberPortalShell";
 import {
-  DEFAULT_PROFILE,
   type MemberProfile,
   useMemberPortal,
 } from "@/app/lib/memberPortal";
 
 export default function ProfilePage() {
-  const { profile, dashboard, replaceProfile, resetPortal } = useMemberPortal();
+  const { dashboard, profile, refreshPortal, saveProfile } = useMemberPortal();
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState<MemberProfile>(profile);
+  const [status, setStatus] = useState<string>("");
 
   useEffect(() => {
     setDraft(profile);
@@ -25,16 +25,22 @@ export default function ProfilePage() {
   function handleCancel() {
     setDraft(profile);
     setIsEditing(false);
+    setStatus("");
   }
 
-  function handleSave() {
-    replaceProfile(draft);
-    setIsEditing(false);
+  async function handleSave() {
+    try {
+      await saveProfile(draft);
+      setStatus("Profile saved.");
+      setIsEditing(false);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Unable to save profile.");
+    }
   }
 
-  function handleReset() {
-    resetPortal();
-    setDraft(DEFAULT_PROFILE);
+  async function handleReload() {
+    await refreshPortal();
+    setStatus("Latest profile loaded from the database.");
     setIsEditing(false);
   }
 
@@ -45,8 +51,8 @@ export default function ProfilePage() {
       subtitle="Update the profile information that appears across the member dashboard and coach-facing summaries."
       headerActions={
         <>
-          <button type="button" className="hh-portal-button hh-portal-button--ghost" onClick={handleReset}>
-            Reset Demo Data
+          <button type="button" className="hh-portal-button hh-portal-button--ghost" onClick={handleReload}>
+            Reload Data
           </button>
           {isEditing ? (
             <>
@@ -75,6 +81,8 @@ export default function ProfilePage() {
               <p className="hh-portal-card-copy">Basic account details and health context.</p>
             </div>
           </div>
+
+          {status ? <p className="hh-portal-status">{status}</p> : null}
 
           <div className="hh-portal-form-grid">
             <label className="hh-field">

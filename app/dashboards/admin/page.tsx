@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 // ─── Figma Asset URLs ─────────────────────────────────────────────────────────
 const LOGO_ICON      = "https://www.figma.com/api/mcp/asset/b62d16c1-9ace-4db9-ac52-c4c34a9bdd3e";
 const NAV_DASHBOARD  = "https://www.figma.com/api/mcp/asset/4a444b5a-55d6-47fd-90bc-2a0c522b40b4";
@@ -62,18 +64,18 @@ export default function AdminDashboard() {
       <aside className="hh-sidebar">
 
         <div className="hh-sidebar__header">
-          <a href="/" className="hh-logo">
+          <Link href="/" className="hh-logo">
             <div className="hh-logo__icon hh-logo__icon--md">
               <img src={LOGO_ICON} alt="" width={16} height={16} />
             </div>
             <span className="hh-logo__text hh-logo__text--md">HeraHealth</span>
-          </a>
+          </Link>
           <span className="hh-badge hh-badge--sm">Admin Portal</span>
         </div>
 
         <nav className="hh-sidebar__nav" aria-label="Admin navigation">
           {NAV_ITEMS.map((item) => (
-            <a
+            <Link
               key={item.label}
               href={item.href}
               className={`hh-nav-link${item.active ? " hh-nav-link--active" : ""}`}
@@ -81,12 +83,12 @@ export default function AdminDashboard() {
             >
               <img src={item.icon} alt="" width={16} height={16} style={{ flexShrink: 0 }} />
               {item.label}
-            </a>
+            </Link>
           ))}
         </nav>
 
         <div className="hh-sidebar__footer">
-          <a href="/" className="hh-sidebar__back">← Back to Home</a>
+          <Link href="/" className="hh-sidebar__back">← Back to Home</Link>
         </div>
 
       </aside>

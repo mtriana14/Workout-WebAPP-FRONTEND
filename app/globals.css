@@ -668,6 +668,13 @@ img {
   border-radius: var(--hh-radius-md);
 }
 
+.hh-sidebar__logout {
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+}
+
 /* ── Nav link ──────────────────────────────────────────────── */
 .hh-nav-link {
   display: flex;
@@ -1117,6 +1124,13 @@ img {
   letter-spacing: -0.03em;
   color: var(--hh-text-primary);
   margin-top: 6px;
+}
+
+.hh-portal-status {
+  font-size: var(--hh-fs-12);
+  font-weight: 600;
+  line-height: 18px;
+  color: var(--hh-accent-light);
 }
 
 /* ── Landing page ──────────────────────────────────────────── */

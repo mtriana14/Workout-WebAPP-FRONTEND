@@ -43,7 +43,47 @@ export function MemberPortalShell({
   children,
   headerActions,
 }: MemberPortalShellProps) {
-  const { displayName, initials, profile } = useMemberPortal();
+  const { displayName, initials, isAuthenticated, isLoading, logout, profile } = useMemberPortal();
+
+  if (isLoading) {
+    return (
+      <div className="hh-dash-root">
+        <main className="hh-dash-main">
+          <div className="hh-dash-content">
+            <div className="hh-card">
+              <h1 className="hh-page-title">Loading Portal</h1>
+              <p className="hh-page-subtitle">Fetching your profile and dashboard from the API.</p>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="hh-dash-root">
+        <main className="hh-dash-main">
+          <div className="hh-dash-content">
+            <div className="hh-card">
+              <h1 className="hh-page-title">Sign In Required</h1>
+              <p className="hh-page-subtitle">
+                This portal now loads from the Flask API and SQL database. Sign in first, then come back here.
+              </p>
+              <div className="hh-portal-header__actions" style={{ marginTop: 16 }}>
+                <Link href="/auth/login" className="hh-portal-button hh-portal-button--primary">
+                  Go to Login
+                </Link>
+                <Link href="/auth/signup" className="hh-portal-button hh-portal-button--secondary">
+                  Create Account
+                </Link>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="hh-dash-root">
@@ -86,6 +126,9 @@ export function MemberPortalShell({
         </div>
 
         <div className="hh-sidebar__footer">
+          <button type="button" className="hh-sidebar__back hh-sidebar__logout" onClick={logout}>
+            Log Out
+          </button>
           <Link href="/" className="hh-sidebar__back">
             ← Back to Home
           </Link>

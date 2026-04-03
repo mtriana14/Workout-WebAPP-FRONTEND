@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   Users,
   DollarSign,
@@ -7,6 +8,9 @@ import {
   MessageSquare,
   Dumbbell,
 } from "lucide-react";
+
+import { getDashboardRouteForRole } from "@/app/lib/api";
+import { useMemberPortal } from "@/app/lib/memberPortal";
 
 const NAV_ITEMS = [
   { label: "Dashboard", href: "/dashboards/coach", active: true },
@@ -69,23 +73,90 @@ const RECENT_ACTIVITY = [
 const maxRevenue = Math.max(...MONTHLY_REVENUE.map((d) => d.revenue));
 
 export default function CoachDashboard() {
+  const { displayName, isAuthenticated, isLoading, logout, profile, userRole } = useMemberPortal();
+
+  if (isLoading) {
+    return (
+      <div className="hh-dash-root">
+        <main className="hh-dash-main">
+          <div className="hh-dash-content">
+            <div className="hh-card">
+              <h1 className="hh-page-title">Loading Coach Portal</h1>
+              <p className="hh-page-subtitle">Checking your signed-in account and loading coach access.</p>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="hh-dash-root">
+        <main className="hh-dash-main">
+          <div className="hh-dash-content">
+            <div className="hh-card">
+              <h1 className="hh-page-title">Coach Sign-In Required</h1>
+              <p className="hh-page-subtitle">
+                Sign in with a coach account to open the coach dashboard.
+              </p>
+              <div className="hh-portal-header__actions" style={{ marginTop: 16 }}>
+                <Link href="/auth/login" className="hh-portal-button hh-portal-button--primary">
+                  Go to Login
+                </Link>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (userRole !== "coach") {
+    return (
+      <div className="hh-dash-root">
+        <main className="hh-dash-main">
+          <div className="hh-dash-content">
+            <div className="hh-card">
+              <h1 className="hh-page-title">Coach Access Only</h1>
+              <p className="hh-page-subtitle">
+                You are signed in as {profile.firstName} {profile.lastName} with the `{userRole}` role.
+              </p>
+              <div className="hh-portal-header__actions" style={{ marginTop: 16 }}>
+                <Link
+                  href={getDashboardRouteForRole(userRole)}
+                  className="hh-portal-button hh-portal-button--primary"
+                >
+                  Open My Dashboard
+                </Link>
+                <button type="button" className="hh-portal-button hh-portal-button--secondary" onClick={logout}>
+                  Log Out
+                </button>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="hh-dash-root">
       {/* SIDEBAR */}
       <aside className="hh-sidebar">
         <div className="hh-sidebar__header">
-          <a href="/" className="hh-logo">
+          <Link href="/" className="hh-logo">
             <div className="hh-logo__icon hh-logo__icon--md">
               <Dumbbell size={16} color="white" />
             </div>
             <span className="hh-logo__text hh-logo__text--md">HeraHealth</span>
-          </a>
+          </Link>
           <span className="hh-badge hh-badge--sm">Coach Portal</span>
         </div>
 
         <nav className="hh-sidebar__nav" aria-label="Coach navigation">
           {NAV_ITEMS.map((item) => (
-            <a
+            <Link
               key={item.label}
               href={item.href}
               className={
@@ -93,14 +164,17 @@ export default function CoachDashboard() {
               }
             >
               {item.label}
-            </a>
+            </Link>
           ))}
         </nav>
 
         <div className="hh-sidebar__footer">
-          <a href="/" className="hh-sidebar__back">
+          <button type="button" className="hh-sidebar__back hh-sidebar__logout" onClick={logout}>
+            Log Out
+          </button>
+          <Link href="/" className="hh-sidebar__back">
             ← Back to Home
-          </a>
+          </Link>
         </div>
       </aside>
 
@@ -110,7 +184,7 @@ export default function CoachDashboard() {
           {/* Header */}
           <div>
             <h1 className="hh-page-title">COACH DASHBOARD</h1>
-            <p className="hh-page-subtitle">Welcome back, Jordan Rivera</p>
+            <p className="hh-page-subtitle">Welcome back, {displayName}</p>
           </div>
 
           {/* Stat cards */}

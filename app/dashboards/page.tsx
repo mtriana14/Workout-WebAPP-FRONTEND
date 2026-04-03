@@ -33,9 +33,10 @@ function numberFromInput(value: string, fallback: number) {
 }
 
 export default function UserDashboardPage() {
-  const { profile, dashboard, replaceDashboard } = useMemberPortal();
+  const { dashboard, profile, saveDashboard } = useMemberPortal();
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState<DashboardSettings>(dashboard);
+  const [status, setStatus] = useState<string>("");
 
   useEffect(() => {
     setDraft(dashboard);
@@ -92,14 +93,20 @@ export default function UserDashboardPage() {
   function handleCancel() {
     setDraft(dashboard);
     setIsEditing(false);
+    setStatus("");
   }
 
-  function handleSave() {
-    replaceDashboard({
-      ...draft,
-      trainingDays: sortDays(draft.trainingDays),
-    });
-    setIsEditing(false);
+  async function handleSave() {
+    try {
+      await saveDashboard({
+        ...draft,
+        trainingDays: sortDays(draft.trainingDays),
+      });
+      setStatus("Dashboard saved.");
+      setIsEditing(false);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Unable to save dashboard.");
+    }
   }
 
   return (
@@ -143,6 +150,8 @@ export default function UserDashboardPage() {
           </div>
         ))}
       </div>
+
+      {status ? <p className="hh-portal-status">{status}</p> : null}
 
       <div className="hh-bottom-row">
         <section id="activity" className="hh-card" style={{ flex: 2 }}>

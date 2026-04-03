@@ -8,6 +8,16 @@ import {
   type PropsWithChildren,
 } from "react";
 
+import {
+  clearAuthSession,
+  fetchCurrentDashboard,
+  fetchCurrentProfile,
+  getStoredAuthSession,
+  getStoredAuthToken,
+  updateCurrentDashboard,
+  updateCurrentProfile,
+} from "@/app/lib/api";
+
 export const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
 export type WeekDay = (typeof WEEK_DAYS)[number];
 
@@ -25,6 +35,7 @@ export interface MemberProfile {
   goal: string;
   emergencyContact: string;
   bio: string;
+  role?: string;
 }
 
 export interface DashboardSettings {
@@ -54,17 +65,16 @@ interface MemberPortalContextValue {
   updateProfile: (patch: Partial<MemberProfile>) => void;
   replaceDashboard: (nextDashboard: DashboardSettings) => void;
   updateDashboard: (patch: Partial<DashboardSettings>) => void;
-  resetPortal: () => void;
+  saveProfile: (nextProfile: MemberProfile) => Promise<void>;
+  saveDashboard: (nextDashboard: DashboardSettings) => Promise<void>;
+  refreshPortal: () => Promise<void>;
+  logout: () => void;
   displayName: string;
   initials: string;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  userRole: string;
 }
-
-interface PersistedPortalState {
-  profile?: Partial<MemberProfile>;
-  dashboard?: Partial<DashboardSettings>;
-}
-
-const STORAGE_KEY = "herahealth.member-portal";
 
 export const DEFAULT_PROFILE: MemberProfile = {
   firstName: "Sam",
@@ -80,6 +90,7 @@ export const DEFAULT_PROFILE: MemberProfile = {
   goal: "Build lean muscle while improving recovery consistency.",
   emergencyContact: "Avery Chen · (555) 884-1102",
   bio: "Focused on strength, mobility, and sustainable routines that fit around grad school and work.",
+  role: "client",
 };
 
 export const DEFAULT_DASHBOARD: DashboardSettings = {
@@ -105,20 +116,6 @@ export const DEFAULT_DASHBOARD: DashboardSettings = {
 
 const MemberPortalContext = createContext<MemberPortalContextValue | null>(null);
 
-function mergePortalState(saved: PersistedPortalState | null) {
-  return {
-    profile: {
-      ...DEFAULT_PROFILE,
-      ...(saved?.profile ?? {}),
-    },
-    dashboard: {
-      ...DEFAULT_DASHBOARD,
-      ...(saved?.dashboard ?? {}),
-      trainingDays: sanitizeTrainingDays(saved?.dashboard?.trainingDays),
-    },
-  };
-}
-
 function sanitizeTrainingDays(trainingDays: unknown): WeekDay[] {
   if (!Array.isArray(trainingDays)) {
     return DEFAULT_DASHBOARD.trainingDays;
@@ -131,39 +128,104 @@ function sanitizeTrainingDays(trainingDays: unknown): WeekDay[] {
   return safeDays.length > 0 ? safeDays : DEFAULT_DASHBOARD.trainingDays;
 }
 
+function mergeProfile(savedProfile: unknown) {
+  if (!savedProfile || typeof savedProfile !== "object") {
+    return DEFAULT_PROFILE;
+  }
+
+  return {
+    ...DEFAULT_PROFILE,
+    ...(savedProfile as Partial<MemberProfile>),
+  };
+}
+
+function mergeDashboard(savedDashboard: unknown) {
+  if (!savedDashboard || typeof savedDashboard !== "object") {
+    return DEFAULT_DASHBOARD;
+  }
+
+  const partialDashboard = savedDashboard as Partial<DashboardSettings>;
+
+  return {
+    ...DEFAULT_DASHBOARD,
+    ...partialDashboard,
+    trainingDays: sanitizeTrainingDays(partialDashboard.trainingDays),
+  };
+}
+
 export function MemberPortalProvider({ children }: PropsWithChildren) {
   const [profile, setProfile] = useState<MemberProfile>(DEFAULT_PROFILE);
   const [dashboard, setDashboard] = useState<DashboardSettings>(DEFAULT_DASHBOARD);
-  const [isHydrated, setIsHydrated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState("client");
 
-  useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      const parsed = raw ? (JSON.parse(raw) as PersistedPortalState) : null;
-      const merged = mergePortalState(parsed);
-      setProfile(merged.profile);
-      setDashboard(merged.dashboard);
-    } catch {
+  async function refreshPortal() {
+    const session = getStoredAuthSession();
+
+    if (!session?.token) {
       setProfile(DEFAULT_PROFILE);
       setDashboard(DEFAULT_DASHBOARD);
-    } finally {
-      setIsHydrated(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!isHydrated) {
+      setIsAuthenticated(false);
+      setUserRole("client");
+      setIsLoading(false);
       return;
     }
 
-    window.localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        profile,
-        dashboard,
-      }),
-    );
-  }, [dashboard, isHydrated, profile]);
+    setIsLoading(true);
+
+    try {
+      const [profileResponse, dashboardResponse] = await Promise.all([
+        fetchCurrentProfile(session.token),
+        fetchCurrentDashboard(session.token),
+      ]);
+
+      setProfile(mergeProfile(profileResponse.profile));
+      setDashboard(mergeDashboard(dashboardResponse.dashboard));
+      setUserRole(profileResponse.user.role);
+      setIsAuthenticated(true);
+    } catch {
+      clearAuthSession();
+      setProfile(DEFAULT_PROFILE);
+      setDashboard(DEFAULT_DASHBOARD);
+      setUserRole("client");
+      setIsAuthenticated(false);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void refreshPortal();
+  }, []);
+
+  async function saveProfile(nextProfile: MemberProfile) {
+    const token = getStoredAuthToken();
+    if (!token) {
+      throw new Error("You need to log in before saving your profile.");
+    }
+
+    const response = await updateCurrentProfile(token, nextProfile);
+    setProfile(mergeProfile(response.profile));
+  }
+
+  async function saveDashboard(nextDashboard: DashboardSettings) {
+    const token = getStoredAuthToken();
+    if (!token) {
+      throw new Error("You need to log in before saving your dashboard.");
+    }
+
+    const response = await updateCurrentDashboard(token, nextDashboard);
+    setDashboard(mergeDashboard(response.dashboard));
+  }
+
+  function logout() {
+    clearAuthSession();
+    setProfile(DEFAULT_PROFILE);
+    setDashboard(DEFAULT_DASHBOARD);
+    setIsAuthenticated(false);
+    setUserRole("client");
+  }
 
   const value: MemberPortalContextValue = {
     profile,
@@ -183,12 +245,15 @@ export function MemberPortalProvider({ children }: PropsWithChildren) {
           ? sanitizeTrainingDays(patch.trainingDays)
           : current.trainingDays,
       })),
-    resetPortal: () => {
-      setProfile(DEFAULT_PROFILE);
-      setDashboard(DEFAULT_DASHBOARD);
-    },
+    saveProfile,
+    saveDashboard,
+    refreshPortal,
+    logout,
     displayName: `${profile.firstName} ${profile.lastName}`.trim(),
     initials: `${profile.firstName[0] ?? ""}${profile.lastName[0] ?? ""}`.toUpperCase(),
+    isAuthenticated,
+    isLoading,
+    userRole,
   };
 
   return (
