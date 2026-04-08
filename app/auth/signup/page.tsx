@@ -2,19 +2,13 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { Dumbbell, User, Mail, Lock, Eye, EyeOff } from "lucide-react";
 
 import {
   getDashboardRouteForRole,
   signupRequest,
   storeAuthSession,
 } from "@/app/lib/api";
-
-const LOGO_ICON_LG = "https://www.figma.com/api/mcp/asset/7ebb7f9f-f182-477e-a95a-d5a3fb16c29d";
-const LOGO_ICON_SM = "https://www.figma.com/api/mcp/asset/57db21ab-8089-480e-96fa-ec916762d540";
-const ICON_USER = "https://www.figma.com/api/mcp/asset/cdb16f5e-7f22-44d4-9557-e72a176b214b";
-const ICON_EMAIL = "https://www.figma.com/api/mcp/asset/ac8a10f9-fb17-4fbd-9ed5-377b0177bf43";
-const ICON_LOCK = "https://www.figma.com/api/mcp/asset/eedd6957-a418-4805-b0df-feff127a1ac9";
-const ICON_EYE = "https://www.figma.com/api/mcp/asset/be0f2571-fb30-432d-93d3-7aa3e8f4f992";
 
 export default function CreateAccountPage() {
   const [firstName, setFirstName] = useState("");
@@ -57,7 +51,7 @@ export default function CreateAccountPage() {
         <div className="auth-left__content">
           <Link href="/" className="hh-logo" aria-label="HeraHealth Home" style={{ marginBottom: 64 }}>
             <div className="hh-logo__icon hh-logo__icon--lg">
-              <img src={LOGO_ICON_LG} alt="" width={20} height={20} />
+              <Dumbbell size={20} color="white" />
             </div>
             <span className="hh-logo__text hh-logo__text--lg">HeraHealth</span>
           </Link>
@@ -73,7 +67,7 @@ export default function CreateAccountPage() {
         <div className="auth-form-wrap">
           <Link href="/" className="hh-logo" aria-label="HeraHealth Home" style={{ marginBottom: 24 }}>
             <div className="hh-logo__icon hh-logo__icon--md">
-              <img src={LOGO_ICON_SM} alt="" width={16} height={16} />
+              <Dumbbell size={16} color="white" />
             </div>
             <span className="hh-logo__text hh-logo__text--sm">HeraHealth</span>
           </Link>
@@ -98,7 +92,7 @@ export default function CreateAccountPage() {
                   First Name
                 </label>
                 <div className="hh-input-wrap">
-                  <img src={ICON_USER} alt="" width={16} height={16} className="hh-input-wrap__icon" />
+                  <User size={16} className="hh-input-wrap__icon" color="var(--hh-text-muted)" />
                   <input
                     id="firstName"
                     type="text"
@@ -134,7 +128,7 @@ export default function CreateAccountPage() {
                 Email
               </label>
               <div className="hh-input-wrap">
-                <img src={ICON_EMAIL} alt="" width={16} height={16} className="hh-input-wrap__icon" />
+                <Mail size={16} className="hh-input-wrap__icon" color="var(--hh-text-muted)" />
                 <input
                   id="email"
                   type="email"
@@ -152,7 +146,7 @@ export default function CreateAccountPage() {
                 Password
               </label>
               <div className="hh-input-wrap">
-                <img src={ICON_LOCK} alt="" width={16} height={16} className="hh-input-wrap__icon" />
+                <Lock size={16} className="hh-input-wrap__icon" color="var(--hh-text-muted)" />
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
@@ -168,7 +162,11 @@ export default function CreateAccountPage() {
                   aria-label={showPassword ? "Hide password" : "Show password"}
                   className="hh-input__eye-btn"
                 >
-                  <img src={ICON_EYE} alt="" width={16} height={16} />
+                  {showPassword ? (
+                    <EyeOff size={16} color="var(--hh-text-muted)" />
+                  ) : (
+                    <Eye size={16} color="var(--hh-text-muted)" />
+                  )}
                 </button>
               </div>
             </div>
