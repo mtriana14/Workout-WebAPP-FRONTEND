@@ -2,56 +2,38 @@
 
 import Link from "next/link";
 import {
+  LayoutDashboard,
   Users,
-  DollarSign,
-  Clock,
-  MessageSquare,
   Dumbbell,
+  Utensils,
+  Calendar,
+  MessageSquare,
+  User,
+  Settings,
+  DollarSign,
+  ClipboardList,
+  Bell
 } from "lucide-react";
 
 import { getDashboardRouteForRole } from "@/app/lib/api";
 import { useMemberPortal } from "@/app/lib/memberPortal";
 
 const NAV_ITEMS = [
-  { label: "Dashboard", href: "/dashboards/coach", active: true },
-  { label: "My Clients", href: "/dashboards/coach/clients", active: false },
-  { label: "Workout Plans", href: "/dashboards/coach/workouts", active: false },
-  { label: "Meal Plans", href: "/dashboards/coach/meals", active: false },
-  { label: "Schedule", href: "/dashboards/coach/schedule", active: false },
-  { label: "Chat", href: "/dashboards/coach/chat", active: false },
-  { label: "Profile", href: "/dashboards/coach/profile", active: false },
-  { label: "Settings", href: "/dashboards/coach/settings", active: false },
+  { label: "Dashboard", icon: LayoutDashboard, href: "/dashboards/coach", active: true },
+  { label: "My Clients", icon: Users, href: "/dashboards/coach/clients", active: false },
+  { label: "Workout Plans", icon: Dumbbell, href: "/dashboards/coach/workouts", active: false },
+  { label: "Meal Plans", icon: Utensils, href: "/dashboards/coach/meals", active: false },
+  { label: "Schedule", icon: Calendar, href: "/dashboards/coach/schedule", active: false },
+  { label: "Chat", icon: MessageSquare, href: "/dashboards/coach/chat", active: false },
+  { label: "Profile", icon: User, href: "/dashboards/coach/profile", active: false },
+  { label: "Settings", icon: Settings, href: "/dashboards/coach/settings", active: false },
 ];
 
 const STAT_CARDS = [
-  {
-    label: "Active Clients",
-    value: "24",
-    delta: "↑ +3 this month",
-    deltaClass: "hh-text-green",
-    sub: "2 pending requests",
-  },
-  {
-    label: "Earnings This Month",
-    value: "$3,576",
-    delta: "↑ +12%",
-    deltaClass: "hh-text-green",
-    sub: "24 clients × $149",
-  },
-  {
-    label: "Pending Requests",
-    value: "3",
-    delta: "Awaiting response",
-    deltaClass: "hh-text-muted",
-    sub: "",
-  },
-  {
-    label: "Unread Messages",
-    value: "7",
-    delta: "From 4 clients",
-    deltaClass: "hh-text-muted",
-    sub: "",
-  },
+  { label: "Active Clients", icon: Users, value: "24", delta: "↑ +3 this month", deltaClass: "hh-text-green", sub: "2 pending requests" },
+  { label: "Earnings This Month", icon: DollarSign, value: "$3,576", delta: "↑ +12%", deltaClass: "hh-text-green", sub: "24 clients × $149" },
+  { label: "Pending Requests", icon: ClipboardList, value: "3", delta: "Awaiting response", deltaClass: "hh-text-muted", sub: "" },
+  { label: "Unread Messages", icon: Bell, value: "7", delta: "From 4 clients", deltaClass: "hh-text-muted", sub: "" },
 ];
 
 const MONTHLY_REVENUE = [
@@ -163,6 +145,7 @@ export default function CoachDashboard() {
                 "hh-nav-link" + (item.active ? " hh-nav-link--active" : "")
               }
             >
+              <item.icon size={16} style={{ flexShrink: 0, marginRight: 8 }} />
               {item.label}
             </Link>
           ))}
@@ -193,6 +176,9 @@ export default function CoachDashboard() {
               <div key={card.label} className="hh-card">
                 <div className="hh-card__header">
                   <span className="hh-card__label">{card.label}</span>
+                  <div className="hh-card__icon">
+                    <card.icon size={16} color="var(--hh-text-muted)" />
+                  </div>
                 </div>
                 <p className="hh-card__value">{card.value}</p>
                 {card.sub && (
