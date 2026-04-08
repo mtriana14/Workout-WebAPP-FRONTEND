@@ -2,17 +2,13 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { Dumbbell, Mail, Lock, Eye, EyeOff } from "lucide-react";
 
 import {
   getDashboardRouteForRole,
   loginRequest,
   storeAuthSession,
 } from "@/app/lib/api";
-
-const LOGO_ICON = "https://www.figma.com/api/mcp/asset/a7e86414-ace0-4453-880e-a2a2325cf9d8";
-const ICON_EMAIL = "https://www.figma.com/api/mcp/asset/8e260993-dc4a-4e04-91e4-a848b626f94b";
-const ICON_LOCK = "https://www.figma.com/api/mcp/asset/192f30cb-3975-46ec-a999-3899233754db";
-const ICON_EYE = "https://www.figma.com/api/mcp/asset/3dfa854a-511f-42d0-8389-46b4b19e96f4";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -46,7 +42,7 @@ export default function LoginPage() {
         <div className="auth-left__content">
           <Link href="/" className="hh-logo" aria-label="HeraHealth Home">
             <div className="hh-logo__icon hh-logo__icon--lg">
-              <img src={LOGO_ICON} alt="" width={20} height={20} />
+              <Dumbbell size={20} color="white" />
             </div>
             <span className="hh-logo__text hh-logo__text--lg">HeraHealth</span>
           </Link>
@@ -79,7 +75,7 @@ export default function LoginPage() {
                 Email
               </label>
               <div className="hh-input-wrap">
-                <img src={ICON_EMAIL} alt="" width={16} height={16} className="hh-input-wrap__icon" />
+                <Mail size={16} className="hh-input-wrap__icon" color="var(--hh-text-muted)" />
                 <input
                   id="email"
                   type="email"
@@ -100,7 +96,7 @@ export default function LoginPage() {
                 <span className="hh-forgot-link">Reset flow not wired yet</span>
               </div>
               <div className="hh-input-wrap">
-                <img src={ICON_LOCK} alt="" width={16} height={16} className="hh-input-wrap__icon" />
+                <Lock size={16} className="hh-input-wrap__icon" color="var(--hh-text-muted)" />
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
@@ -116,7 +112,11 @@ export default function LoginPage() {
                   aria-label={showPassword ? "Hide password" : "Show password"}
                   className="hh-input__eye-btn"
                 >
-                  <img src={ICON_EYE} alt="" width={16} height={16} />
+                  {showPassword ? (
+                    <EyeOff size={16} color="var(--hh-text-muted)" />
+                  ) : (
+                    <Eye size={16} color="var(--hh-text-muted)" />
+                  )}
                 </button>
               </div>
             </div>
