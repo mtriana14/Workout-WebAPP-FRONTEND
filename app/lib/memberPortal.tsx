@@ -185,11 +185,19 @@ export function MemberPortalProvider({ children }: PropsWithChildren) {
       setUserRole(profileResponse.user.role);
       setIsAuthenticated(true);
     } catch {
-      clearAuthSession();
-      setProfile(DEFAULT_PROFILE);
+      console.warn("Could not fetch profile APIs. Falling back to session data.");
+      
+      const user = session.user as any; 
+      
+      setProfile(mergeProfile({
+        firstName: user.firstName || user.first_name || "Coach",
+        lastName: user.lastName || user.last_name || "",
+        email: user.email,
+        role: user.role
+      }));
       setDashboard(DEFAULT_DASHBOARD);
-      setUserRole("client");
-      setIsAuthenticated(false);
+      setUserRole(user.role || "client");
+      setIsAuthenticated(true);
     } finally {
       setIsLoading(false);
     }
