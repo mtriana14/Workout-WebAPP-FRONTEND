@@ -2,15 +2,16 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { 
+  Dumbbell, 
+  LayoutDashboard, 
+  User, 
+  Target, 
+  Settings, 
+  Activity 
+} from "lucide-react";
 
 import { useMemberPortal } from "@/app/lib/memberPortal";
-
-const LOGO_ICON = "https://www.figma.com/api/mcp/asset/b62d16c1-9ace-4db9-ac52-c4c34a9bdd3e";
-const NAV_DASHBOARD = "https://www.figma.com/api/mcp/asset/4a444b5a-55d6-47fd-90bc-2a0c522b40b4";
-const NAV_USERS = "https://www.figma.com/api/mcp/asset/c8b2bcee-a404-442c-ba16-e64f05751f1c";
-const NAV_EXERCISE = "https://www.figma.com/api/mcp/asset/66986bb5-e372-40a1-8ae8-510ada58004f";
-const NAV_PAYMENT = "https://www.figma.com/api/mcp/asset/1f6854ee-fd37-467a-a9cf-f702637b4972";
-const NAV_NOTIF = "https://www.figma.com/api/mcp/asset/6f6a281c-bc69-4c6f-aa8c-8be330657de2";
 
 type ActivePage = "dashboard" | "profile";
 
@@ -23,11 +24,11 @@ interface MemberPortalShellProps {
 }
 
 const NAV_ITEMS = [
-  { id: "dashboard", label: "Dashboard", icon: NAV_DASHBOARD, href: "/dashboards/user" },
-  { id: "profile", label: "Profile", icon: NAV_USERS, href: "/profile" },
-  { id: "goals", label: "Goals", icon: NAV_EXERCISE, href: "/dashboards/user#goals" },
-  { id: "Preferences", label: "Preferences", icon: NAV_PAYMENT, href: "/dashboards/user#preferences" },
-  { id: "activity", label: "Activity", icon: NAV_NOTIF, href: "/dashboards/user#activity" },
+  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboards/user" },
+  { id: "profile", label: "Profile", icon: User, href: "/profile" },
+  { id: "goals", label: "Goals", icon: Target, href: "/dashboards/user#goals" },
+  { id: "Preferences", label: "Preferences", icon: Settings, href: "/dashboards/user#preferences" },
+  { id: "activity", label: "Activity", icon: Activity, href: "/dashboards/user#activity" },
 ] as const;
 
 const MOBILE_LINKS = [
@@ -91,7 +92,7 @@ export function MemberPortalShell({
         <div className="hh-sidebar__header">
           <Link href="/" className="hh-logo">
             <div className="hh-logo__icon hh-logo__icon--md">
-              <img src={LOGO_ICON} alt="" width={16} height={16} />
+              <Dumbbell size={16} color="white" />
             </div>
             <span className="hh-logo__text hh-logo__text--md">HeraHealth</span>
           </Link>
@@ -108,7 +109,7 @@ export function MemberPortalShell({
               }`}
               aria-current={item.id === activePage ? "page" : undefined}
             >
-              <img src={item.icon} alt="" width={16} height={16} style={{ flexShrink: 0 }} />
+              <item.icon size={16} style={{ flexShrink: 0, marginRight: 8 }} />
               {item.label}
             </Link>
           ))}

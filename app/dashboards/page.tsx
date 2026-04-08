@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Dumbbell, Flame, Droplets, Moon } from "lucide-react";
 
 import { MemberPortalShell } from "@/app/components/memberPortalShell";
 import {
@@ -20,8 +21,6 @@ const WEEKLY_MINUTES: Record<WeekDay, number> = {
   Sat: 40,
   Sun: 25,
 };
-
-const CARD_ICONS = ["🏋️", "🔥", "💧", "😴"] as const;
 
 function sortDays(days: WeekDay[]) {
   return [...days].sort((left, right) => WEEK_DAYS.indexOf(left) - WEEK_DAYS.indexOf(right));
@@ -47,26 +46,32 @@ export default function UserDashboardPage() {
     .slice(0, 3) as WeekDay;
 
   const activeDays = dashboard.trainingDays.length;
+  
+  // Replaced emojis with Lucide React component references
   const statCards = [
     {
       label: "Workouts Completed",
       value: dashboard.workoutsCompleted.toString(),
       delta: `${activeDays} active days this week`,
+      icon: Dumbbell
     },
     {
       label: "Current Streak",
       value: `${dashboard.currentStreak} days`,
       delta: "Consistency is trending up",
+      icon: Flame
     },
     {
       label: "Hydration Goal",
       value: `${dashboard.hydrationGoal} oz`,
       delta: draft.mealFocus,
+      icon: Droplets
     },
     {
       label: "Sleep Target",
       value: `${dashboard.sleepGoal} hrs`,
       delta: dashboard.recoveryFocus,
+      icon: Moon
     },
   ];
 
@@ -137,12 +142,12 @@ export default function UserDashboardPage() {
       }
     >
       <div className="hh-stats-grid">
-        {statCards.map((card, index) => (
+        {statCards.map((card) => (
           <div key={card.label} className="hh-card">
             <div className="hh-card__header">
               <span className="hh-card__label">{card.label}</span>
               <div className="hh-card__icon" style={{ fontSize: 16 }}>
-                {CARD_ICONS[index]}
+                <card.icon size={16} color="var(--hh-text-muted)" />
               </div>
             </div>
             <p className="hh-card__value">{card.value}</p>
