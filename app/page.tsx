@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getStoredAuthSession, getDashboardRouteForRole } from "@/app/lib/api";
 import { 
   Dumbbell, 
   Flame, 
@@ -61,6 +62,14 @@ export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
+    // 1. ADDED REDIRECT LOGIC: Check if user is logged in and bounce them to their dashboard
+    const session = getStoredAuthSession();
+    if (session?.token && session?.user?.role) {
+      window.location.assign(getDashboardRouteForRole(session.user.role));
+      return; 
+    }
+
+    // 2. Existing escape key logic
     const handleKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setMenuOpen(false);

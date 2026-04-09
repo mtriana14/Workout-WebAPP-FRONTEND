@@ -13,6 +13,7 @@ import {
   DollarSign,
   ClipboardList
 } from "lucide-react";
+import { clearAuthSession } from "@/app/lib/api";
 
 const NAV_ITEMS = [
   { label: "Dashboard",     icon: LayoutDashboard, href: "/dashboards/admin", active: true  },
@@ -50,6 +51,12 @@ const ACTIVITY = [
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function AdminDashboard() {
+  // ADDED: Logout handler for the admin dashboard
+  function handleLogout() {
+    clearAuthSession();
+    window.location.assign("/");
+  }
+
   return (
     <div className="hh-dash-root">
 
@@ -81,6 +88,10 @@ export default function AdminDashboard() {
         </nav>
 
         <div className="hh-sidebar__footer">
+          {/* ADDED: Logout button so admins can actually leave the dashboard */}
+          <button type="button" className="hh-sidebar__back hh-sidebar__logout" onClick={handleLogout}>
+            Log Out
+          </button>
           <Link href="/" className="hh-sidebar__back">← Back to Home</Link>
         </div>
 

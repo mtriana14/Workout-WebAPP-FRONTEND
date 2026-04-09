@@ -233,6 +233,7 @@ export function MemberPortalProvider({ children }: PropsWithChildren) {
     setDashboard(DEFAULT_DASHBOARD);
     setIsAuthenticated(false);
     setUserRole("client");
+    window.location.assign("/");
   }
 
   const value: MemberPortalContextValue = {
