@@ -13,7 +13,7 @@ import {
 
 import { useMemberPortal } from "@/app/lib/memberPortal";
 
-type ActivePage = "dashboard" | "profile";
+type ActivePage = "dashboard" | "profile" | "goals";
 
 interface MemberPortalShellProps {
   activePage: ActivePage;
@@ -26,7 +26,9 @@ interface MemberPortalShellProps {
 const NAV_ITEMS = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboards/user" },
   { id: "profile", label: "Profile", icon: User, href: "/profile" },
-  { id: "goals", label: "Goals", icon: Target, href: "/dashboards/user#goals" },
+  
+  { id: "goals", label: "Goals", icon: Target, href: "/goals" }, 
+  
   { id: "Preferences", label: "Preferences", icon: Settings, href: "/dashboards/user#preferences" },
   { id: "activity", label: "Activity", icon: Activity, href: "/dashboards/user#activity" },
 ] as const;
@@ -34,7 +36,7 @@ const NAV_ITEMS = [
 const MOBILE_LINKS = [
   { label: "Dashboard", href: "/dashboards/user" },
   { label: "Profile", href: "/profile" },
-  { label: "Goals", href: "/dashboards/user#goals" },
+  { label: "Goals", href: "/goals" },
 ];
 
 export function MemberPortalShell({

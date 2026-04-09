@@ -126,10 +126,21 @@ export function fetchCurrentProfile(token: string) {
 }
 
 export function updateCurrentProfile<T>(token: string, profile: T) {
+  // 1. Automatically grab the session to find the user ID
+  const session = getStoredAuthSession();
+  
+  if (!session || !session.user) {
+    throw new Error("Cannot update profile: No active session found.");
+  }
+
+  // 2. Safely extract the ID regardless of case-formatting
+  const userId = session.user.id || (session.user as any).user_id || (session.user as any).userId;
+
+  // 3. Hit the correct backend route!
   return apiRequest<CurrentProfileResponse>(
-    "/auth/update", // Changed from "/users/me"
+    `/customers/${userId}`,
     {
-      method: "PATCH", // Changed from "PUT"
+      method: "PATCH",
       body: JSON.stringify(profile),
     },
     token,
@@ -164,4 +175,43 @@ interface CurrentProfileResponse {
 
 interface CurrentDashboardResponse {
   dashboard: Record<string, unknown>;
+}
+
+
+export interface FitnessGoal {
+  goal_id: number;
+  user_id: number;
+  goal_type: string;
+  target_value: number | null;
+  target_unit: string | null;
+  deadline: string | null;
+  status: 'active' | 'completed' | 'deleted';
+  created_at: string;
+  updated_at: string;
+}
+
+export function getFitnessGoals(token: string) {
+  return apiRequest<{ Goals: FitnessGoal[] }>("/fitnessgoal", {
+    method: "GET",
+  }, token);
+}
+
+export function createFitnessGoal(token: string, payload: Partial<FitnessGoal>) {
+  return apiRequest("/fitnessgoal", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  }, token);
+}
+
+export function updateFitnessGoal(token: string, goalId: number, payload: Partial<FitnessGoal>) {
+  return apiRequest(`/fitnessgoal/${goalId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  }, token);
+}
+
+export function deleteFitnessGoal(token: string, goalId: number) {
+  return apiRequest(`/fitnessgoal/${goalId}`, {
+    method: "DELETE",
+  }, token);
 }
