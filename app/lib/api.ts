@@ -247,3 +247,25 @@ export function sendCoachingRequest(token: string, coachId: number, message: str
     }),
   }, token);
 }
+
+
+export function deleteAccountRequest(token: string, password?: string) {
+  return apiRequest("/auth/delete", {
+    method: "DELETE",
+    // Passing the password in case the backend delete controller strictly requires it for verification
+    body: JSON.stringify({ password }),
+  }, token);
+}
+
+export function applyForCoachRequest(token: string, payload: { specialization: string, experience_years: number, certifications: string }) {
+  // Using the coach_apply blueprint route
+  return apiRequest("/coach/apply", { 
+    method: "POST",
+    body: JSON.stringify(payload)
+  }, token);
+}
+
+export function fakePasswordResetRequest(email: string) {
+  // Skeleton API call for UC 1.11
+  return new Promise((resolve) => setTimeout(resolve, 1500));
+}
