@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { Search, Filter, Star, DollarSign, X, User as UserIcon } from "lucide-react";
 import { MemberPortalShell } from "@/app/components/memberPortalShell";
 import { getStoredAuthToken, fetchCoaches, type CoachRecord } from "@/app/lib/api";
 
 export default function FindCoachesPage() {
+  const router = useRouter();
   const [coaches, setCoaches] = useState<CoachRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -168,7 +170,7 @@ export default function FindCoachesPage() {
               <button 
                 className="btn btn--ghost" 
                 style={{ width: "100%", justifyContent: "center" }}
-                onClick={() => alert(`Redirect to Coach Profile for ${coach.first_name} (UC 2.2)`)}
+                onClick={() => router.push(`/coaches/${coach.user_id}`)}
               >
                 View Profile
               </button>

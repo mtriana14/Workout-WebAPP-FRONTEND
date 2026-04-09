@@ -207,3 +207,43 @@ export async function fetchCoaches(token: string): Promise<CoachRecord[]> {
 
   return parsedUsers.filter((u) => u.role === "coach");
 }
+
+export async function fetchCoachById(token: string, id: number): Promise<CoachRecord> {
+  // Use the existing backend endpoint that accepts a user_id parameter
+  const response = await apiRequest<any[]>(`/getusers?user_id=${id}`, { method: "GET" }, token);
+  
+  if (!response || response.length === 0) {
+    throw new Error("Coach not found");
+  }
+
+  const user = response[0];
+  const isArray = Array.isArray(user);
+  const userId = isArray ? user[0] : user.user_id;
+
+  // Keep deterministic mock data consistent with the discovery page
+  const specialties = ["Strength Training", "Nutrition", "Yoga", "Endurance", "CrossFit"];
+  const prices = [50, 75, 100, 150, 200];
+  const ratings = [4.2, 4.5, 4.8, 4.9, 5.0];
+
+  return {
+    user_id: userId,
+    first_name: isArray ? user[1] : user.first_name,
+    last_name: isArray ? user[2] : user.last_name,
+    email: isArray ? user[4] : user.email,
+    role: isArray ? user[6] : user.role,
+    profile_photo: isArray ? user[12] : user.profile_photo,
+    specialty: specialties[userId % specialties.length],
+    price: prices[userId % prices.length],
+    rating: ratings[userId % ratings.length],
+    bio: "Dedicated to helping you reach your best self through structured and personalized programming. I have years of experience in the fitness industry, helping dozens of clients achieve their dream physiques and improve their overall health."
+  };
+}
+
+export function sendCoachingRequest(token: string, coachId: number, message: string) {
+  return apiRequest(`/client/request-coach/${coachId}`, { // Passing the ID dynamically into the URL
+    method: "POST",
+    body: JSON.stringify({
+      message: message
+    }),
+  }, token);
+}
