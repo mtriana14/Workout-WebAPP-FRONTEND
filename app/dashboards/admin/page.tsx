@@ -1,28 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import {
-  Dumbbell,
-  LayoutDashboard,
   Users,
-  Briefcase,
-  Activity,
-  CreditCard,
-  Bell,
   UserCheck,
   DollarSign,
   ClipboardList
 } from "lucide-react";
-import { clearAuthSession } from "@/app/lib/api";
 
-const NAV_ITEMS = [
-  { label: "Dashboard",     icon: LayoutDashboard, href: "/dashboards/admin", active: true  },
-  { label: "Users",         icon: Users,           href: "/admin/users",      active: false },
-  { label: "Coaches",       icon: Briefcase,       href: "/admin/coaches",    active: false },
-  { label: "Exercise DB",   icon: Activity,        href: "/admin/exercises",  active: false },
-  { label: "Payment",       icon: CreditCard,      href: "/admin/payments",   active: false },
-  { label: "Notifications", icon: Bell,            href: "/admin/notifications", active: false },
-];
+import { AdminPortalShell } from "@/app/components/adminPortalShell";
 
 const STAT_CARDS = [
   { label: "Total Users",        icon: Users,         value: "12,481",  delta: "↑ +284 this week",  deltaClass: "hh-text-green" },
@@ -51,62 +36,12 @@ const ACTIVITY = [
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function AdminDashboard() {
-  // ADDED: Logout handler for the admin dashboard
-  function handleLogout() {
-    clearAuthSession();
-    window.location.assign("/");
-  }
-
   return (
-    <div className="hh-dash-root">
-
-      {/* ── SIDEBAR ── */}
-      <aside className="hh-sidebar">
-
-        <div className="hh-sidebar__header">
-          <Link href="/" className="hh-logo">
-            <div className="hh-logo__icon hh-logo__icon--md">
-              <Dumbbell size={16} color="white" />
-            </div>
-            <span className="hh-logo__text hh-logo__text--md">HeraHealth</span>
-          </Link>
-          <span className="hh-badge hh-badge--sm">Admin Portal</span>
-        </div>
-
-        <nav className="hh-sidebar__nav" aria-label="Admin navigation">
-          {NAV_ITEMS.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className={`hh-nav-link${item.active ? " hh-nav-link--active" : ""}`}
-              aria-current={item.active ? "page" : undefined}
-            >
-              <item.icon size={16} style={{ flexShrink: 0 }} />
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="hh-sidebar__footer">
-          {/* ADDED: Logout button so admins can actually leave the dashboard */}
-          <button type="button" className="hh-sidebar__back hh-sidebar__logout" onClick={handleLogout}>
-            Log Out
-          </button>
-          <Link href="/" className="hh-sidebar__back">← Back to Home</Link>
-        </div>
-
-      </aside>
-
-      {/* ── MAIN ── */}
-      <main className="hh-dash-main">
-        <div className="hh-dash-content">
-
-          {/* Page heading */}
-          <div>
-            <h1 className="hh-page-title">ADMIN DASHBOARD</h1>
-            <p className="hh-page-subtitle">Platform overview and management</p>
-          </div>
-
+    <AdminPortalShell
+      activePage="dashboard"
+      title="ADMIN DASHBOARD"
+      subtitle="Platform overview and management"
+    >
           {/* Stat cards */}
           <div className="hh-stats-grid">
             {STAT_CARDS.map((card) => (
@@ -164,9 +99,6 @@ export default function AdminDashboard() {
             </div>
 
           </div>
-        </div>
-      </main>
-
-    </div>
+    </AdminPortalShell>
   );
 }

@@ -66,6 +66,16 @@ export function clearAuthSession() {
   window.localStorage.removeItem(AUTH_STORAGE_KEY);
 }
 
+export function signOut(redirectTo = "/auth/login") {
+  clearAuthSession();
+
+  if (!isBrowser()) {
+    return;
+  }
+
+  window.location.assign(redirectTo);
+}
+
 export function getDashboardRouteForRole(role: string) {
   if (role === "admin") {
     return "/dashboards/admin";
@@ -391,4 +401,242 @@ export function markMealCompletedRequest(token: string, mealId: number, isComple
     method: "POST",
     body: JSON.stringify({ completed: isCompleted })
   }, token);
+}
+
+export interface AdminUserRecord {
+  user_id: number;
+  name: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  role: "client" | "coach" | "admin";
+  is_active: boolean;
+  phone?: string | null;
+  last_login?: string | null;
+  created_at?: string | null;
+}
+
+export interface AdminUsersResponse {
+  users: AdminUserRecord[];
+  counts: {
+    total: number;
+    clients: number;
+    coaches: number;
+    admins: number;
+    active: number;
+  };
+}
+
+export interface AdminCoachRecord {
+  id: number;
+  coach_id: number;
+  user_id: number;
+  name: string;
+  email: string;
+  specialization: string;
+  experience_years: number | null;
+  certifications: string | null;
+  cost: number;
+  hourly_rate: number | null;
+  bio: string | null;
+  status: "active" | "pending" | "approved" | "suspended" | "disabled" | "rejected";
+  verified_at?: string | null;
+  created_at?: string | null;
+}
+
+export interface AdminExerciseRecord {
+  id: number;
+  e_id: number;
+  name: string;
+  description: string | null;
+  muscle_group: string | null;
+  equipment: string | null;
+  equipment_type: string | null;
+  difficulty: string | null;
+  instructions: string | null;
+  video_url: string | null;
+  created_at?: string | null;
+}
+
+export interface AdminPaymentRecord {
+  id: number;
+  payment_id: number;
+  client_name: string;
+  coach_name: string;
+  amount: number;
+  currency: string;
+  status: "pending" | "completed" | "failed" | "refunded";
+  payment_method?: string | null;
+  transaction_id?: string | null;
+  paid_at?: string | null;
+  created_at?: string | null;
+}
+
+export interface AdminPaymentSummary {
+  total_revenue: number;
+  total_transactions: number;
+  status_breakdown: Array<{
+    status: string;
+    count: number;
+    total: number;
+  }>;
+}
+
+export interface AdminNotificationRecord {
+  id: number;
+  notification_id: number;
+  user_id: number;
+  user_name: string;
+  user_email?: string | null;
+  title: string;
+  message: string;
+  type: string;
+  is_read: boolean;
+  created_at?: string | null;
+}
+
+export function fetchAdminUsers(token: string, role?: string) {
+  const query = role && role !== "all" ? `?role=${encodeURIComponent(role)}` : "";
+  return apiRequest<AdminUsersResponse>(`/admin/users${query}`, { method: "GET" }, token);
+}
+
+export function updateAdminUserStatus(token: string, userId: number, isActive: boolean) {
+  return apiRequest<{ message: string; user: AdminUserRecord }>(
+    `/admin/users/${userId}/status`,
+    {
+      method: "PUT",
+      body: JSON.stringify({ is_active: isActive }),
+    },
+    token,
+  );
+}
+
+export function fetchAdminCoaches(token: string) {
+  return apiRequest<{ coaches: AdminCoachRecord[] }>("/admin/coaches", { method: "GET" }, token);
+}
+
+export function fetchAdminPendingCoaches(token: string) {
+  return apiRequest<{ pending_coaches: AdminCoachRecord[] }>(
+    "/admin/coaches/pending",
+    { method: "GET" },
+    token,
+  );
+}
+
+export function processAdminCoach(token: string, coachId: number, action: "approved" | "rejected") {
+  return apiRequest<{ message: string }>(
+    `/admin/coaches/${coachId}/process`,
+    {
+      method: "PUT",
+      body: JSON.stringify({ action }),
+    },
+    token,
+  );
+}
+
+export function suspendAdminCoach(token: string, coachId: number) {
+  return apiRequest<{ message: string }>(
+    `/admin/coaches/${coachId}/suspend`,
+    { method: "PUT" },
+    token,
+  );
+}
+
+export function reactivateAdminCoach(token: string, coachId: number) {
+  return apiRequest<{ message: string }>(
+    `/admin/coaches/${coachId}/reactivate`,
+    { method: "PUT" },
+    token,
+  );
+}
+
+export function disableAdminCoach(token: string, coachId: number) {
+  return apiRequest<{ message: string }>(
+    `/admin/coaches/${coachId}/disable`,
+    { method: "PUT" },
+    token,
+  );
+}
+
+export function fetchAdminExercises(token: string) {
+  return apiRequest<{ exercises: AdminExerciseRecord[] }>("/admin/exercises", { method: "GET" }, token);
+}
+
+export function createAdminExercise(
+  token: string,
+  exercise: Pick<AdminExerciseRecord, "name" | "description" | "muscle_group" | "equipment_type" | "difficulty" | "instructions" | "video_url">,
+) {
+  return apiRequest<{ message: string; id: number }>(
+    "/admin/exercises",
+    {
+      method: "POST",
+      body: JSON.stringify(exercise),
+    },
+    token,
+  );
+}
+
+export function updateAdminExercise(
+  token: string,
+  exerciseId: number,
+  exercise: Partial<Pick<AdminExerciseRecord, "name" | "description" | "muscle_group" | "equipment_type" | "difficulty" | "instructions" | "video_url">>,
+) {
+  return apiRequest<{ message: string }>(
+    `/admin/exercises/${exerciseId}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(exercise),
+    },
+    token,
+  );
+}
+
+export function deleteAdminExercise(token: string, exerciseId: number) {
+  return apiRequest<{ message: string }>(
+    `/admin/exercises/${exerciseId}`,
+    { method: "DELETE" },
+    token,
+  );
+}
+
+export function fetchAdminPaymentSummary(token: string) {
+  return apiRequest<AdminPaymentSummary>("/admin/payments/summary", { method: "GET" }, token);
+}
+
+export function fetchAdminPayments(token: string, page = 1, perPage = 25) {
+  return apiRequest<{ payments: AdminPaymentRecord[]; total: number; pages: number; current_page: number }>(
+    `/admin/payments?page=${page}&per_page=${perPage}`,
+    { method: "GET" },
+    token,
+  );
+}
+
+export function fetchAdminNotifications(token: string) {
+  return apiRequest<{ notifications: AdminNotificationRecord[] }>(
+    "/admin/notifications",
+    { method: "GET" },
+    token,
+  );
+}
+
+export function sendAdminNotification(
+  token: string,
+  payload: { user_id: number; title: string; message: string; type: string },
+) {
+  return apiRequest<{ message: string; id: number }>(
+    "/notifications",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    token,
+  );
+}
+
+export function deleteAdminNotification(token: string, notificationId: number) {
+  return apiRequest<{ message: string }>(
+    `/notifications/${notificationId}`,
+    { method: "DELETE" },
+    token,
+  );
 }
