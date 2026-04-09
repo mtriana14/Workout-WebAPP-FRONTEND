@@ -8,12 +8,13 @@ import {
   User, 
   Target, 
   Settings, 
-  Activity 
+  Activity,
+  Search
 } from "lucide-react";
 
 import { useMemberPortal } from "@/app/lib/memberPortal";
 
-type ActivePage = "dashboard" | "profile";
+type ActivePage = "dashboard" | "profile" | "coaches";
 
 interface MemberPortalShellProps {
   activePage: ActivePage;
@@ -25,6 +26,7 @@ interface MemberPortalShellProps {
 
 const NAV_ITEMS = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboards/user" },
+  { id: "coaches", label: "Find Coaches", icon: Search, href: "/coaches" },
   { id: "profile", label: "Profile", icon: User, href: "/profile" },
   { id: "goals", label: "Goals", icon: Target, href: "/dashboards/user#goals" },
   { id: "Preferences", label: "Preferences", icon: Settings, href: "/dashboards/user#preferences" },
