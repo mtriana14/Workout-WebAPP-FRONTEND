@@ -24,6 +24,20 @@ export default function CreateAccountPage() {
     event.preventDefault();
     setError("");
 
+    const nextFirstName = firstName.trim();
+    const nextLastName = lastName.trim();
+    const nextEmail = email.trim();
+
+    if (!nextFirstName || !nextLastName || !nextEmail || !password) {
+      setError("First name, last name, email, and password are required.");
+      return;
+    }
+
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters long.");
+      return;
+    }
+
     if (!agreed) {
       setError("You need to accept the terms before creating an account.");
       return;
@@ -32,7 +46,7 @@ export default function CreateAccountPage() {
     setIsSubmitting(true);
 
     try {
-      const response = await signupRequest(firstName.trim(), lastName.trim(), email.trim(), password);
+      const response = await signupRequest(nextFirstName, nextLastName, nextEmail, password);
       storeAuthSession({
         token: response.token,
         user: response.user,
@@ -101,6 +115,7 @@ export default function CreateAccountPage() {
                     className="hh-input"
                     value={firstName}
                     onChange={(event) => setFirstName(event.target.value)}
+                    required
                   />
                 </div>
               </div>
@@ -118,6 +133,7 @@ export default function CreateAccountPage() {
                     className="hh-input hh-input--no-icon-left"
                     value={lastName}
                     onChange={(event) => setLastName(event.target.value)}
+                    required
                   />
                 </div>
               </div>
@@ -137,6 +153,7 @@ export default function CreateAccountPage() {
                   className="hh-input"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
+                  required
                 />
               </div>
             </div>
@@ -155,6 +172,8 @@ export default function CreateAccountPage() {
                   className="hh-input"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
+                  minLength={8}
+                  required
                 />
                 <button
                   type="button"

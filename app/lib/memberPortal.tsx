@@ -77,55 +77,54 @@ interface MemberPortalContextValue {
 }
 
 export const DEFAULT_PROFILE: MemberProfile = {
-  firstName: "Sam",
-  lastName: "Chen",
-  email: "user@herahealth.com",
-  phone: "(555) 014-2288",
-  city: "Jersey City, NJ",
+  firstName: "",
+  lastName: "",
+  email: "",
+  phone: "",
+  city: "",
   membership: "Member Portal",
-  coachName: "Jordan Rivera",
-  pronouns: "she/her",
-  height: "5'8\"",
-  weight: "148 lbs",
-  goal: "Build lean muscle while improving recovery consistency.",
-  emergencyContact: "Avery Chen · (555) 884-1102",
-  bio: "Focused on strength, mobility, and sustainable routines that fit around grad school and work.",
+  coachName: "",
+  pronouns: "",
+  height: "",
+  weight: "",
+  goal: "",
+  emergencyContact: "",
+  bio: "",
   role: "client",
 };
 
 export const DEFAULT_DASHBOARD: DashboardSettings = {
-  workoutsCompleted: 48,
-  currentStreak: 12,
-  caloriesBurned: 9340,
-  goalsMet: 7,
-  goalsTotal: 8,
-  weeklyWorkoutGoal: 4,
-  hydrationGoal: 96,
-  sleepGoal: 8,
-  focusArea: "Build lean muscle with stronger lower-body sessions.",
-  preferredSessionTime: "Early mornings before 9 AM",
-  mealFocus: "More protein at breakfast and post-workout meals.",
-  trainingDays: ["Mon", "Wed", "Fri", "Sat"],
-  coachNote:
-    "Keep deadlift volume moderate this week and stay consistent with mobility work after each lift.",
-  nextSessionTitle: "Lower Body Strength Check-In",
-  nextSessionDate: "Thu, Mar 27 · 7:30 AM",
-  nextSessionFormat: "Virtual video session",
-  recoveryFocus: "8 hours of sleep and 10 minutes of mobility after each workout.",
+  workoutsCompleted: 0,
+  currentStreak: 0,
+  caloriesBurned: 0,
+  goalsMet: 0,
+  goalsTotal: 0,
+  weeklyWorkoutGoal: 0,
+  hydrationGoal: 0,
+  sleepGoal: 0,
+  focusArea: "",
+  preferredSessionTime: "",
+  mealFocus: "",
+  trainingDays: [],
+  coachNote: "",
+  nextSessionTitle: "",
+  nextSessionDate: "",
+  nextSessionFormat: "",
+  recoveryFocus: "",
 };
 
 const MemberPortalContext = createContext<MemberPortalContextValue | null>(null);
 
 function sanitizeTrainingDays(trainingDays: unknown): WeekDay[] {
   if (!Array.isArray(trainingDays)) {
-    return DEFAULT_DASHBOARD.trainingDays;
+    return [];
   }
 
   const safeDays = trainingDays.filter((day): day is WeekDay =>
     typeof day === "string" && WEEK_DAYS.includes(day as WeekDay),
   );
 
-  return safeDays.length > 0 ? safeDays : DEFAULT_DASHBOARD.trainingDays;
+  return safeDays;
 }
 
 function mergeProfile(savedProfile: unknown) {
