@@ -21,6 +21,8 @@ export interface AuthSession {
 interface ApiErrorPayload {
   error?: string;
   message?: string;
+  Failed?: string;
+  "Error:"?: string;
 }
 
 function isBrowser() {
@@ -92,7 +94,8 @@ async function apiRequest<T>(path: string, init: RequestInit = {}, token?: strin
   const payload = (await response.json().catch(() => ({}))) as T & ApiErrorPayload;
 
   if (!response.ok) {
-    throw new Error(payload.error || payload.message || "Request failed");
+    const exactError = payload["Error:"] ? ` - ${payload["Error:"]}` : "";
+    throw new Error((payload.Failed || payload.error || payload.message || "Request failed") + exactError);
   }
 
   return payload as T;
@@ -252,7 +255,6 @@ export function sendCoachingRequest(token: string, coachId: number, message: str
 export function deleteAccountRequest(token: string, password?: string) {
   return apiRequest("/auth/delete", {
     method: "DELETE",
-    // Passing the password in case the backend delete controller strictly requires it for verification
     body: JSON.stringify({ password }),
   }, token);
 }

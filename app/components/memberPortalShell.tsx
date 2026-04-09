@@ -9,12 +9,14 @@ import {
   Target, 
   Settings, 
   Activity,
-  Search
+  Search,
+  MessageSquare,
+  CreditCard
 } from "lucide-react";
 
 import { useMemberPortal } from "@/app/lib/memberPortal";
 
-type ActivePage = "dashboard" | "profile" | "coaches";
+type ActivePage = "dashboard" | "profile" | "coaches" | "settings" | "billing" | "chat" | "activity";
 
 interface MemberPortalShellProps {
   activePage: ActivePage;
@@ -27,10 +29,12 @@ interface MemberPortalShellProps {
 const NAV_ITEMS = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboards/user" },
   { id: "coaches", label: "Find Coaches", icon: Search, href: "/coaches" },
+  { id: "chat", label: "Messages", icon: MessageSquare, href: "/chat" }, // ADDED
   { id: "profile", label: "Profile", icon: User, href: "/profile" },
-  { id: "goals", label: "Goals", icon: Target, href: "/dashboards/user#goals" },
-  { id: "Preferences", label: "Preferences", icon: Settings, href: "/dashboards/user#preferences" },
-  { id: "activity", label: "Activity", icon: Activity, href: "/dashboards/user#activity" },
+  { id: "goals", label: "Goals", icon: Target, href: "/dashboards/user#goals" }, // PRESERVED EXACTLY AS YOU HAD IT
+  { id: "Preferences", label: "Preferences", icon: Settings, href: "/settings" }, // REROUTED to new settings page
+  { id: "activity", label: "Activity", icon: Activity, href: "/activity" }, // REROUTED to new activity page
+  { id: "billing", label: "Billing", icon: CreditCard, href: "/billing" }, // ADDED
 ] as const;
 
 const MOBILE_LINKS = [
