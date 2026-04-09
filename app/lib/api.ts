@@ -259,11 +259,14 @@ export function deleteAccountRequest(token: string, password?: string) {
   }, token);
 }
 
-export function applyForCoachRequest(token: string, payload: { specialization: string, experience_years: number, certifications: string }) {
-  // Using the coach_apply blueprint route
+export function applyForCoachRequest(token: string, payload: { specialty: string, experience_years: number, certifications: string }) {
   return apiRequest("/coach/apply", { 
     method: "POST",
-    body: JSON.stringify(payload)
+    body: JSON.stringify({
+      specialty: payload.specialty,
+      qualifications: `${payload.experience_years} years exp. Certs: ${payload.certifications}`, // Merging them to match the backend 'qualifications' column
+      document_links: "" // Leaving empty as there's no upload field in the UI yet
+    })
   }, token);
 }
 

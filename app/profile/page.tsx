@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { MemberPortalShell } from "@/app/components/memberPortalShell";
 import {
@@ -9,6 +10,7 @@ import {
 } from "@/app/lib/memberPortal";
 
 export default function ProfilePage() {
+  const router = useRouter();
   const { dashboard, profile, refreshPortal, saveProfile } = useMemberPortal();
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState<MemberProfile>(profile);
@@ -228,6 +230,21 @@ export default function ProfilePage() {
               <span className="hh-portal-summary-label">Current focus</span>
               <p className="hh-portal-summary-value">{dashboard.focusArea}</p>
             </div>
+          </div>
+
+          {/* Become a Coach Link (UC 1.9) */}
+          <div style={{ marginTop: 32, paddingTop: 24, borderTop: "1px solid #2c2c30" }}>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: "white", marginBottom: 8 }}>Professional Services</h3>
+            <p className="hh-portal-card-copy" style={{ marginBottom: 16 }}>
+              Are you a certified fitness professional? Apply to offer your services to clients on our platform.
+            </p>
+            <button 
+              className="btn btn--secondary" 
+              style={{ width: "100%", justifyContent: "center" }}
+              onClick={() => router.push("/become-coach")}
+            >
+              Become a Coach
+            </button>
           </div>
         </section>
       </div>
