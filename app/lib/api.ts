@@ -274,3 +274,36 @@ export function fakePasswordResetRequest(email: string) {
   // Skeleton API call for UC 1.11
   return new Promise((resolve) => setTimeout(resolve, 1500));
 }
+
+export function logStrengthRequest(token: string, payload: any) {
+  return apiRequest("/logs/strength", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  }, token);
+}
+
+export function logCardioRequest(token: string, payload: any) {
+  return apiRequest("/logs/cardio", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  }, token);
+}
+
+export function logDailyMetricsRequest(token: string, payload: any) {
+  return apiRequest("/logs/steps-calories", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  }, token);
+}
+
+export function fetchActivityLogs(token: string) {
+  return apiRequest("/logs", {
+    method: "GET",
+  }, token);
+}
+
+export function deleteActivityLog(token: string, logId: number) {
+  return apiRequest(`/logs/${logId}`, {
+    method: "DELETE",
+  }, token);
+}
