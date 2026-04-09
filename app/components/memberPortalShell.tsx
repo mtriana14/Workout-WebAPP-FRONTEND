@@ -11,12 +11,13 @@ import {
   Activity,
   Search,
   MessageSquare,
-  CreditCard
+  CreditCard,
+  Apple
 } from "lucide-react";
 
 import { useMemberPortal } from "@/app/lib/memberPortal";
 
-type ActivePage = "dashboard" | "profile" | "coaches" | "settings" | "billing" | "chat" | "activity";
+type ActivePage = "dashboard" | "profile" | "coaches" | "Preferences" | "activity" | "chat" | "billing" | "nutrition";
 
 interface MemberPortalShellProps {
   activePage: ActivePage;
@@ -29,12 +30,13 @@ interface MemberPortalShellProps {
 const NAV_ITEMS = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboards/user" },
   { id: "coaches", label: "Find Coaches", icon: Search, href: "/coaches" },
-  { id: "chat", label: "Messages", icon: MessageSquare, href: "/chat" }, // ADDED
+  { id: "chat", label: "Messages", icon: MessageSquare, href: "/chat" },
   { id: "profile", label: "Profile", icon: User, href: "/profile" },
-  { id: "goals", label: "Goals", icon: Target, href: "/dashboards/user#goals" }, // PRESERVED EXACTLY AS YOU HAD IT
-  { id: "Preferences", label: "Preferences", icon: Settings, href: "/settings" }, // REROUTED to new settings page
-  { id: "activity", label: "Activity", icon: Activity, href: "/activity" }, // REROUTED to new activity page
-  { id: "billing", label: "Billing", icon: CreditCard, href: "/billing" }, // ADDED
+  { id: "nutrition", label: "Nutrition", icon: Apple, href: "/nutrition" },
+  { id: "goals", label: "Goals", icon: Target, href: "/dashboards/user#goals" },
+  { id: "Preferences", label: "Preferences", icon: Settings, href: "/settings" },
+  { id: "activity", label: "Activity", icon: Activity, href: "/activity" },
+  { id: "billing", label: "Billing", icon: CreditCard, href: "/billing" },
 ] as const;
 
 const MOBILE_LINKS = [

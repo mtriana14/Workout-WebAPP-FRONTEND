@@ -307,3 +307,20 @@ export function deleteActivityLog(token: string, logId: number) {
     method: "DELETE",
   }, token);
 }
+
+// --- NUTRITION & MEAL PLAN API (SKELETONS) ---
+
+export function fetchMealPlansRequest(token: string) {
+  // Skeleton for fetching a user's assigned meal plans
+  return apiRequest("/mealplans/my-plans", {
+    method: "GET",
+  }, token);
+}
+
+export function markMealCompletedRequest(token: string, mealId: number, isCompleted: boolean) {
+  // Skeleton for marking a specific meal as eaten
+  return apiRequest(`/mealplans/meals/${mealId}/complete`, {
+    method: "POST",
+    body: JSON.stringify({ completed: isCompleted })
+  }, token);
+}
