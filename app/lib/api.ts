@@ -106,9 +106,18 @@ export function loginRequest(email: string, password: string) {
 }
 
 export function signupRequest(firstName: string, lastName: string, email: string, password: string) {
+  // Auto-generate a unique username to bypass the backend's NULL check
+  const uniqueUsername = `${firstName.toLowerCase().replace(/\s+/g, '')}_${Date.now()}`;
+
   return apiRequest<AuthSessionLikeResponse>("/auth/register", {
     method: "POST",
-    body: JSON.stringify({ firstName, lastName, email, password }),
+    body: JSON.stringify({ 
+      first_name: firstName, 
+      last_name: lastName, 
+      username: uniqueUsername, // Send the generated username
+      email, 
+      password 
+    }),
   });
 }
 
@@ -118,9 +127,9 @@ export function fetchCurrentProfile(token: string) {
 
 export function updateCurrentProfile<T>(token: string, profile: T) {
   return apiRequest<CurrentProfileResponse>(
-    "/users/me",
+    "/auth/update", // Changed from "/users/me"
     {
-      method: "PUT",
+      method: "PATCH", // Changed from "PUT"
       body: JSON.stringify(profile),
     },
     token,

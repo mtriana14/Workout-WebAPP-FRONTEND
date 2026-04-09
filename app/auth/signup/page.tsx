@@ -36,8 +36,8 @@ export default function CreateAccountPage() {
       storeAuthSession({
         token: response.token,
         user: response.user,
-      });
-      window.location.assign(getDashboardRouteForRole(response.user.role));
+      });      
+      window.location.assign("/auth/onboarding");
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "Unable to create account.");
       setIsSubmitting(false);
