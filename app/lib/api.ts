@@ -165,3 +165,45 @@ interface CurrentProfileResponse {
 interface CurrentDashboardResponse {
   dashboard: Record<string, unknown>;
 }
+
+export interface CoachRecord {
+  user_id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  role: string;
+  profile_photo?: string;
+  // Enhanced Demo Fields
+  specialty: string;
+  price: number;
+  rating: number;
+  bio: string;
+}
+
+export async function fetchCoaches(token: string): Promise<CoachRecord[]> {
+  const response = await apiRequest<any[]>("/getusers", { method: "GET" }, token);
+  
+  const parsedUsers = response.map((user: any) => {
+    const isArray = Array.isArray(user);
+    const userId = isArray ? user[0] : user.user_id;
+    
+    const specialties = ["Strength Training", "Nutrition", "Yoga", "Endurance", "CrossFit"];
+    const prices = [50, 75, 100, 150, 200];
+    const ratings = [4.2, 4.5, 4.8, 4.9, 5.0];
+
+    return {
+      user_id: userId,
+      first_name: isArray ? user[1] : user.first_name,
+      last_name: isArray ? user[2] : user.last_name,
+      email: isArray ? user[4] : user.email,
+      role: isArray ? user[6] : user.role,
+      profile_photo: isArray ? user[12] : user.profile_photo,
+      specialty: specialties[userId % specialties.length],
+      price: prices[userId % prices.length],
+      rating: ratings[userId % ratings.length],
+      bio: "Dedicated to helping you reach your best self through structured and personalized programming."
+    };
+  });
+
+  return parsedUsers.filter((u) => u.role === "coach");
+}
