@@ -16,7 +16,7 @@ export default function ClientDashboardPage() {
   const [mealPlans, setMealPlans] = useState<ClientMealPlan[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const userId = user?.id;
+  const userId = user?.user_id;
 
   useEffect(() => {
     const loadData = async () => {
@@ -68,7 +68,7 @@ export default function ClientDashboardPage() {
         <div className="hh-dash-content">
           <div>
             <h1 className="hh-page-title">MY DASHBOARD</h1>
-            <p className="hh-page-subtitle">Welcome back, {user?.id || "Client"}!</p>
+            <p className="hh-page-subtitle">Welcome back, {user?.first_name || "Client"}!</p>
           </div>
 
           {/* Stats */}
