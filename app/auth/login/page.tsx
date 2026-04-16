@@ -10,13 +10,13 @@ import { ROLE_REDIRECTS } from "@/router/router";
 
 // ─── Figma Asset URLs ─────────────────────────────────────────────────────────
 const LOGO_ICON =
-  "https://www.figma.com/api/mcp/asset/a7e86414-ace0-4453-880e-a2a2325cf9d8";
+  "";
 const ICON_EMAIL =
-  "https://www.figma.com/api/mcp/asset/8e260993-dc4a-4e04-91e4-a848b626f94b";
+  " ";
 const ICON_LOCK =
-  "https://www.figma.com/api/mcp/asset/192f30cb-3975-46ec-a999-3899233754db";
+  " ";
 const ICON_EYE =
-  "https://www.figma.com/api/mcp/asset/3dfa854a-511f-42d0-8389-46b4b19e96f4";
+  " ";
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function LoginPage() {

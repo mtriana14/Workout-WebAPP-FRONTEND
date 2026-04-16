@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Activity, Award, ClipboardList, Dumbbell, Flame, Footprints, LucideIcon, TrendingUp, Utensils } from "lucide-react";
+import {  useEffect, useState } from "react";
 
 const LOGO_ICON = "https://www.figma.com/api/mcp/asset/4f80479e-9707-41c3-ab0e-81f454820085";
 const ICON_CAL = "https://www.figma.com/api/mcp/asset/1b42fe3a-e33b-45d0-8e7d-57b32779b3d6";
@@ -15,25 +16,46 @@ const FOOTER_ICON = "https://www.figma.com/api/mcp/asset/6436eee6-7271-4db2-bb82
 
 interface StatCardProps {
   label: string;
-  icon: string;
+  icon: LucideIcon;
   value: string;
   target: string;
   delta?: string;
 }
 
 interface FeatureCardProps {
-  icon: string;
+  icon: LucideIcon;
   title: string;
   description: string;
 }
 
-function StatCard({ label, icon, value, target, delta }: StatCardProps) {
+
+ const statCards: StatCardProps[] = [
+    { label: "Calories Today", icon: Flame, value: "2,140", target: "Target: 3,200 kcal", delta: "↑ 340 left" },
+    { label: "Daily Steps", icon: Footprints, value: "7,842", target: "Target: 10,000 steps", delta: "↑ 78%" },
+    { label: "Active Calories", icon: Activity, value: "384", target: "Burned today", delta: "↑ 12% vs yesterday" },
+    { label: "Workouts This Week", icon: Dumbbell, value: "3", target: "Goal: 4 sessions" },
+  ];
+
+
+
+function FeatureCard({ icon: Icon, title, description }: FeatureCardProps) {
+  return (
+    <article className="hh-landing-feature-card">
+      <div className="hh-landing-feature-card__icon">
+        <Icon size={20} />
+      </div>
+      <h3 className="hh-landing-feature-card__title">{title}</h3>
+      <p className="hh-landing-feature-card__desc">{description}</p>
+    </article>
+  );
+}
+function StatCard({ label, icon: Icon, value, target, delta }: StatCardProps) {
   return (
     <div className="hh-landing-stat-card">
       <div className="hh-landing-stat-card__header">
         <span className="hh-landing-stat-card__label">{label}</span>
         <div className="hh-landing-stat-card__icon">
-          <img src={icon} alt="" width={16} height={16} />
+          <Icon size={16} />
         </div>
       </div>
       <div className="hh-landing-stat-card__body">
@@ -44,19 +66,6 @@ function StatCard({ label, icon, value, target, delta }: StatCardProps) {
     </div>
   );
 }
-
-function FeatureCard({ icon, title, description }: FeatureCardProps) {
-  return (
-    <article className="hh-landing-feature-card">
-      <div className="hh-landing-feature-card__icon">
-        <img src={icon} alt="" width={20} height={20} />
-      </div>
-      <h3 className="hh-landing-feature-card__title">{title}</h3>
-      <p className="hh-landing-feature-card__desc">{description}</p>
-    </article>
-  );
-}
-
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -71,31 +80,31 @@ export default function LandingPage() {
     return () => document.removeEventListener("keydown", handleKey);
   }, []);
 
-  const statCards: StatCardProps[] = [
-    { label: "Calories Today", icon: ICON_CAL, value: "2,140", target: "Target: 3,200 kcal", delta: "↑ 340 left" },
-    { label: "Daily Steps", icon: ICON_STEPS, value: "7,842", target: "Target: 10,000 steps", delta: "↑ 78%" },
-    { label: "Active Calories", icon: ICON_BURN, value: "384", target: "Burned today", delta: "↑ 12% vs yesterday" },
-    { label: "Workouts This Week", icon: ICON_WO, value: "3", target: "Goal: 4 sessions" },
+ const statCards: StatCardProps[] = [
+    { label: "Calories Today", icon: Flame, value: "2,140", target: "Target: 3,200 kcal", delta: "↑ 340 left" },
+    { label: "Daily Steps", icon: Footprints, value: "7,842", target: "Target: 10,000 steps", delta: "↑ 78%" },
+    { label: "Active Calories", icon: Activity, value: "384", target: "Burned today", delta: "↑ 12% vs yesterday" },
+    { label: "Workouts This Week", icon: Dumbbell, value: "3", target: "Goal: 4 sessions" },
   ];
 
   const featureCards: FeatureCardProps[] = [
     {
-      icon: ICON_PLAN,
+      icon: ClipboardList,
       title: "Workout Planning",
       description: "Coaches build custom periodized programs tailored to your goals, equipment, and schedule.",
     },
     {
-      icon: ICON_EXP,
+      icon: Award,
       title: "Experts",
       description: "Browse verified coaches by specialty, rating, and price. Find your perfect fit and start in 24 hours.",
     },
     {
-      icon: ICON_NUT,
+      icon: Utensils,
       title: "Nutrition & Meal Planning",
       description: "Get personalized meal plans with macro tracking, recipe suggestions, and calorie goals.",
     },
     {
-      icon: ICON_PROG,
+      icon: TrendingUp,
       title: "Progress Analytics",
       description: "Track every rep, mile, and meal. Visual dashboards show exactly how you're improving.",
     },
@@ -108,7 +117,7 @@ export default function LandingPage() {
           <div className="hh-navbar__inner">
             <a href="#" className="hh-navbar__brand" aria-label="HeraHealth Home">
               <div className="hh-navbar__brand-icon">
-                <img src={LOGO_ICON} alt="HeraHealth logo mark" width={16} height={16} />
+                <Dumbbell size={16} />
               </div>
               <span className="hh-navbar__brand-text">HeraHealth</span>
             </a>
@@ -233,7 +242,7 @@ export default function LandingPage() {
               <div className="hh-landing-footer__brand">
                 <div className="hh-landing-footer__logo">
                   <div className="hh-landing-footer__logo-icon">
-                    <img src={FOOTER_ICON} alt="HeraHealth" width={14} height={14} />
+                    <Dumbbell size={14} />
                   </div>
                   <span className="hh-landing-footer__logo-text">HeraHealth</span>
                 </div>
