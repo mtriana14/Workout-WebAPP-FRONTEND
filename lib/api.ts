@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:5000/api/";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 const COMPANY_ID = process.env.NEXT_PUBLIC_COMPANY_ID ?? "1";
 
 interface RequestOptions {
