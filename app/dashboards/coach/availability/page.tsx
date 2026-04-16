@@ -299,7 +299,7 @@ export default function AvailabilityPage() {
           {/* Tips */}
           <div className="hh-card" style={{ padding: 20, backgroundColor: "rgba(234, 179, 8, 0.05)" }}>
             <p style={{ margin: 0, fontSize: 13, color: "var(--hh-text-secondary)" }}>
-              <strong>💡 Tip:</strong> Clients will see your availability when browsing coaches. 
+              <strong>Tip:</strong> Clients will see your availability when browsing coaches. 
               Keep your schedule up to date to receive relevant coaching requests.
             </p>
           </div>

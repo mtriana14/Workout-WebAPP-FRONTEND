@@ -141,7 +141,7 @@ export default function ClientDashboardPage() {
             {/* Workout Plans */}
             <div className="hh-card" style={{ padding: 0, overflow: "hidden" }}>
               <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--hh-border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>🏋️ Workout Plans</h3>
+                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Workout Plans</h3>
                 <a href="/dashboards/client/workouts" style={{ fontSize: 13, color: "var(--hh-accent)", textDecoration: "none" }}>View All →</a>
               </div>
               {workoutPlans.length === 0 ? (
@@ -161,7 +161,7 @@ export default function ClientDashboardPage() {
             {/* Meal Plans */}
             <div className="hh-card" style={{ padding: 0, overflow: "hidden" }}>
               <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--hh-border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>🥗 Meal Plans</h3>
+                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Meal Plans</h3>
                 <a href="/dashboards/client/meals" style={{ fontSize: 13, color: "var(--hh-accent)", textDecoration: "none" }}>View All →</a>
               </div>
               {mealPlans.length === 0 ? (

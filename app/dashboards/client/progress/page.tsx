@@ -59,7 +59,7 @@ export default function ProgressPage() {
 
           {/* Coming Soon */}
           <div className="hh-card" style={{ padding: 60, textAlign: "center" }}>
-            <p style={{ fontSize: 48, margin: 0 }}>📊</p>
+            <p style={{ fontSize: 48, margin: 0 }}></p>
             <h2 style={{ margin: "16px 0 8px", fontSize: 20 }}>Progress Tracking Coming Soon</h2>
             <p style={{ margin: 0, color: "var(--hh-text-muted)", maxWidth: 400, marginInline: "auto" }}>
               Track your workouts, nutrition, and overall fitness progress. 

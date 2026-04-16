@@ -169,7 +169,7 @@ export default function LoginPage() {
           {/* Dev hint — remove before production */}
 
           {/* Demo portals */}
-          <div className="hh-demo-box">
+          {/* <div className="hh-demo-box">
             <p className="hh-demo-box__label">Quick access demo portals:</p>
             <div className="hh-demo-box__buttons">
               <a href="/dashboards/user" className="hh-badge">
@@ -182,7 +182,7 @@ export default function LoginPage() {
                 Admin Portal
               </a>
             </div>
-          </div>
+          </div> */}
 
           {/* Sign-up prompt */}
           <p className="hh-auth-prompt">

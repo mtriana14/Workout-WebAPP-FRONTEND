@@ -56,7 +56,7 @@ export default function MyMealsPage() {
             <div style={{ padding: "24px", borderBottom: "1px solid var(--hh-border)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <div>
-                  <h2 style={{ margin: 0, fontSize: 20 }}>🥗 {selectedPlan.name}</h2>
+                  <h2 style={{ margin: 0, fontSize: 20 }}>{selectedPlan.name}</h2>
                   <p style={{ margin: "8px 0 0", fontSize: 14, color: "var(--hh-text-muted)" }}>by {selectedPlan.coach_name}</p>
                 </div>
                 <span style={{ padding: "4px 12px", borderRadius: 12, fontSize: 12, fontWeight: 600, backgroundColor: STATUS_STYLES[selectedPlan.status].bg, color: STATUS_STYLES[selectedPlan.status].color }}>

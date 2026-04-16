@@ -249,10 +249,10 @@ export default function ClientsPage() {
             </div>
             <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 10 }}>
               <button onClick={() => openWorkoutModal(selectedClient)} style={{ padding: "14px 16px", border: "none", borderRadius: 8, backgroundColor: "var(--hh-accent)", color: "white", fontSize: 14, fontWeight: 600, cursor: "pointer", textAlign: "left" }}>
-                🏋️ Manage Workout Plans
+                Manage Workout Plans
               </button>
               <button onClick={() => openMealModal(selectedClient)} style={{ padding: "14px 16px", border: "none", borderRadius: 8, backgroundColor: "var(--hh-text-green)", color: "white", fontSize: 14, fontWeight: 600, cursor: "pointer", textAlign: "left" }}>
-                🥗 Manage Meal Plans
+                Manage Meal Plans
               </button>
             </div>
             <div style={{ padding: "16px 24px", borderTop: "1px solid var(--hh-border)", display: "flex", justifyContent: "flex-end" }}>
@@ -270,7 +270,7 @@ export default function ClientsPage() {
         >
           <div className="hh-card" style={{ width: 550, maxHeight: "85vh", overflow: "auto", padding: 0 }} onClick={(e) => e.stopPropagation()}>
             <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--hh-border)" }}>
-              <h2 style={{ margin: 0, fontSize: 18 }}>🏋️ Workout Plans - {selectedClient.client_name}</h2>
+              <h2 style={{ margin: 0, fontSize: 18 }}>Workout Plans - {selectedClient.client_name}</h2>
             </div>
             
             {/* Form */}
@@ -351,7 +351,7 @@ export default function ClientsPage() {
         >
           <div className="hh-card" style={{ width: 550, maxHeight: "85vh", overflow: "auto", padding: 0 }} onClick={(e) => e.stopPropagation()}>
             <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--hh-border)" }}>
-              <h2 style={{ margin: 0, fontSize: 18 }}>🥗 Meal Plans - {selectedClient.client_name}</h2>
+              <h2 style={{ margin: 0, fontSize: 18 }}>Meal Plans - {selectedClient.client_name}</h2>
             </div>
             
             {/* Form */}
