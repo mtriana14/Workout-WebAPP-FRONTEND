@@ -675,6 +675,17 @@ img {
   background: transparent;
 }
 
+.hh-sidebar__logout-button {
+  margin-bottom: 6px;
+  color: var(--hh-text-primary);
+  border: 1px solid var(--hh-border);
+  background: rgba(145, 89, 133, 0.08);
+}
+
+.hh-sidebar__logout-button:hover {
+  background: rgba(145, 89, 133, 0.16);
+}
+
 /* ── Nav link ──────────────────────────────────────────────── */
 .hh-nav-link {
   display: flex;

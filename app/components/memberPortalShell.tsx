@@ -17,7 +17,7 @@ import {
 
 import { useMemberPortal } from "@/app/lib/memberPortal";
 
-type ActivePage = "dashboard" | "profile" | "coaches" | "Preferences" | "activity" | "chat" | "billing" | "nutrition";
+type ActivePage = "dashboard" | "profile" | "coaches" | "settings" | "activity" | "chat" | "billing" | "nutrition";
 
 interface MemberPortalShellProps {
   activePage: ActivePage;
@@ -34,7 +34,7 @@ const NAV_ITEMS = [
   { id: "profile", label: "Profile", icon: User, href: "/profile" },
   { id: "nutrition", label: "Nutrition", icon: Apple, href: "/nutrition" },
   { id: "goals", label: "Goals", icon: Target, href: "/dashboards/user#goals" },
-  { id: "Preferences", label: "Preferences", icon: Settings, href: "/settings" },
+  { id: "settings", label: "Preferences", icon: Settings, href: "/settings" },
   { id: "activity", label: "Activity", icon: Activity, href: "/activity" },
   { id: "billing", label: "Billing", icon: CreditCard, href: "/billing" },
 ] as const;

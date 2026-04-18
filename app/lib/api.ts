@@ -1,7 +1,10 @@
 "use client";
 
+import { useAuthStore } from "@/store/authStore";
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:5000/api";
 const AUTH_STORAGE_KEY = "herahealth.auth";
+const AUTH_STORE_KEY = "auth";
 
 export interface AuthUser {
   id: number;
@@ -63,7 +66,9 @@ export function clearAuthSession() {
     return;
   }
 
+  useAuthStore.getState().clearAuth();
   window.localStorage.removeItem(AUTH_STORAGE_KEY);
+  window.localStorage.removeItem(AUTH_STORE_KEY);
 }
 
 export function signOut(redirectTo = "/auth/login") {

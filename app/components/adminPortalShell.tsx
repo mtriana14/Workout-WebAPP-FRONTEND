@@ -133,7 +133,9 @@ export function AdminPortalShell({
         </nav>
 
         <div className="hh-sidebar__footer">
-          <SignOutButton className="hh-sidebar__back hh-sidebar__logout" />
+          <SignOutButton className="hh-sidebar__back hh-sidebar__logout hh-sidebar__logout-button">
+            Sign Out
+          </SignOutButton>
           <Link href="/" className="hh-sidebar__back">
             ← Back to Home
           </Link>

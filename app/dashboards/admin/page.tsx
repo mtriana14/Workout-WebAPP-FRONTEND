@@ -1,50 +1,131 @@
 "use client";
 
-import {
-  Users,
-  UserCheck,
-  DollarSign,
-  ClipboardList
-} from "lucide-react";
+import { useEffect, useState } from "react";
+import { ClipboardList, DollarSign, Dumbbell, UserCheck, type LucideIcon } from "lucide-react";
 
-import { AdminPortalShell } from "@/app/components/adminPortalShell";
+import NavComponent from "@/components/NavComponent";
+import { SignOutButton } from "@/app/components/signOutButton";
+import { NAV_ITEMS_ADMIN } from "@/router/router";
+import { coachService } from "@/services/coachService";
+import { exerciseService } from "@/services/exerciseService";
+import { paymentService } from "@/services/paymentService";
+import { useAuthStore } from "@/store/authStore";
 
-const STAT_CARDS = [
-  { label: "Total Users",        icon: Users,         value: "12,481",  delta: "↑ +284 this week",  deltaClass: "hh-text-green" },
-  { label: "Active Coaches",     icon: UserCheck,     value: "483",     delta: "↑ +12 this month",  deltaClass: "hh-text-green" },
-  { label: "Revenue This Month", icon: DollarSign,    value: "$72,300", delta: "↑ +18%",             deltaClass: "hh-text-green" },
-  { label: "Pending Approvals",  icon: ClipboardList, value: "2",       delta: "Coach registrations",deltaClass: "hh-text-muted" },
-];
+const LOGO_ICON = "https://www.figma.com/api/mcp/asset/b62d16c1-9ace-4db9-ac52-c4c34a9bdd3e";
 
-const MONTHLY_REVENUE = [
-  { month: "Sep", revenue: 42000 },
-  { month: "Oct", revenue: 48000 },
-  { month: "Nov", revenue: 51000 },
-  { month: "Dec", revenue: 60000 },
-  { month: "Jan", revenue: 68000 },
-  { month: "Feb", revenue: 72300 },
-];
-const maxRevenue = Math.max(...MONTHLY_REVENUE.map((d) => d.revenue));
+interface AdminStats {
+  totalCoaches: number;
+  pendingCoaches: number;
+  totalExercises: number;
+  totalRevenue: number;
+}
 
-const ACTIVITY = [
-  { text: "Morgan Davis signed up",                  time: "5 min ago"   },
-  { text: "Alex Morgan requested Jordan Rivera",     time: "12 min ago"  },
-  { text: "Payment received: $149 from Sam Chen",    time: "45 min ago"  },
-  { text: "Priya Nair submitted coach verification", time: "1 hour ago"  },
-  { text: "Taylor Kim completed 30-day streak",      time: "2 hours ago" },
-];
+interface AdminCard {
+  label: string;
+  icon: LucideIcon;
+  value: string;
+  helper: string;
+}
 
-// ─── Component ────────────────────────────────────────────────────────────────
-export default function AdminDashboard() {
+export default function AdminDashboardPage() {
+  const user = useAuthStore((state) => state.user);
+  const [stats, setStats] = useState<AdminStats>({
+    totalCoaches: 0,
+    pendingCoaches: 0,
+    totalExercises: 0,
+    totalRevenue: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const [coachResponse, exerciseResponse, paymentResponse] = await Promise.all([
+          coachService.getAll(),
+          exerciseService.getAll(),
+          paymentService.getStats(),
+        ]);
+
+        const coaches = coachResponse.coaches ?? [];
+        const exercises = exerciseResponse.exercises ?? [];
+
+        setStats({
+          totalCoaches: coaches.length,
+          pendingCoaches: coaches.filter((coach) => coach.status === "pending").length,
+          totalExercises: exercises.length,
+          totalRevenue: paymentResponse.total_revenue ?? paymentResponse.summary.total_revenue ?? 0,
+        });
+      } catch (error) {
+        console.error("Failed to load admin dashboard", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadStats();
+  }, []);
+
+  const cards: AdminCard[] = [
+    {
+      label: "Total Coaches",
+      icon: UserCheck,
+      value: loading ? "..." : String(stats.totalCoaches),
+      helper: "Approved and pending coach accounts",
+    },
+    {
+      label: "Pending Approvals",
+      icon: ClipboardList,
+      value: loading ? "..." : String(stats.pendingCoaches),
+      helper: "Coach registrations waiting for review",
+    },
+    {
+      label: "Exercises",
+      icon: Dumbbell,
+      value: loading ? "..." : String(stats.totalExercises),
+      helper: "Exercises available in the database",
+    },
+    {
+      label: "Revenue",
+      icon: DollarSign,
+      value: loading ? "..." : `$${stats.totalRevenue.toLocaleString()}`,
+      helper: "Total revenue tracked by the admin API",
+    },
+  ];
+
   return (
-    <AdminPortalShell
-      activePage="dashboard"
-      title="ADMIN DASHBOARD"
-      subtitle="Platform overview and management"
-    >
-          {/* Stat cards */}
+    <div className="hh-dash-root">
+      <aside className="hh-sidebar">
+        <div className="hh-sidebar__header">
+          <a href="/" className="hh-logo">
+            <div className="hh-logo__icon hh-logo__icon--md">
+              <img src={LOGO_ICON} alt="" width={16} height={16} />
+            </div>
+            <span className="hh-logo__text hh-logo__text--md">HeraHealth</span>
+          </a>
+          <span className="hh-badge hh-badge--sm">Admin Portal</span>
+        </div>
+
+        <NavComponent NAV_ITEMS={NAV_ITEMS_ADMIN} />
+
+        <div className="hh-sidebar__footer">
+          <SignOutButton className="hh-sidebar__back hh-sidebar__logout hh-sidebar__logout-button">
+            Sign Out
+          </SignOutButton>
+          <a href="/" className="hh-sidebar__back">
+            Back to Home
+          </a>
+        </div>
+      </aside>
+
+      <main className="hh-dash-main">
+        <div className="hh-dash-content">
+          <div>
+            <h1 className="hh-page-title">ADMIN DASHBOARD</h1>
+            <p className="hh-page-subtitle">Welcome back, {user?.name ?? "Admin"}.</p>
+          </div>
+
           <div className="hh-stats-grid">
-            {STAT_CARDS.map((card) => (
+            {cards.map((card) => (
               <div key={card.label} className="hh-card">
                 <div className="hh-card__header">
                   <span className="hh-card__label">{card.label}</span>
@@ -53,52 +134,40 @@ export default function AdminDashboard() {
                   </div>
                 </div>
                 <p className="hh-card__value">{card.value}</p>
-                <p className={`hh-card__delta ${card.deltaClass}`}>{card.delta}</p>
+                <p className="hh-card__delta hh-text-muted">{card.helper}</p>
               </div>
             ))}
           </div>
 
-          {/* Bottom row */}
           <div className="hh-bottom-row">
-
-            {/* Revenue chart */}
             <div className="hh-card" style={{ flex: 2 }}>
-              <h2 className="hh-panel-heading">Revenue by Month</h2>
-              <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-around", height: 180, gap: 8 }}>
-                {MONTHLY_REVENUE.map((bar) => (
-                  <div key={bar.month} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, flex: 1, height: "100%", justifyContent: "flex-end" }}>
-                    <div style={{ width: "100%", display: "flex", alignItems: "flex-end", justifyContent: "center", flex: 1 }}>
-                      <div
-                        style={{
-                          width: "100%",
-                          maxWidth: 40,
-                          height: `${(bar.revenue / maxRevenue) * 100}%`,
-                          background: "var(--hh-accent)",
-                          borderRadius: "6px 6px 0 0",
-                          minHeight: 8,
-                        }}
-                      />
-                    </div>
-                    <span style={{ fontSize: "var(--hh-fs-12)", color: "var(--hh-text-muted)" }}>{bar.month}</span>
-                  </div>
-                ))}
+              <h2 className="hh-panel-heading">Quick Actions</h2>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 }}>
+                <a href="/dashboards/admin/coaches" className="hh-nav-link">
+                  Manage Coaches
+                </a>
+                <a href="/dashboards/admin/exercises" className="hh-nav-link">
+                  Review Exercises
+                </a>
+                <a href="/dashboards/admin/payments" className="hh-nav-link">
+                  View Payments
+                </a>
+                <a href="/dashboards/admin/users" className="hh-nav-link">
+                  Manage Users
+                </a>
               </div>
             </div>
 
-            {/* Recent Activity */}
             <div className="hh-card" style={{ flex: 1 }}>
-              <h2 className="hh-panel-heading">Recent Activity</h2>
-              <ul className="hh-activity-list">
-                {ACTIVITY.map((item, i) => (
-                  <li key={i} className="hh-activity-item">
-                    <p className="hh-activity-item__text">{item.text}</p>
-                    <p className="hh-activity-item__time">{item.time}</p>
-                  </li>
-                ))}
-              </ul>
+              <h2 className="hh-panel-heading">Status</h2>
+              <p className="hh-card__delta hh-text-muted">API-backed admin summary loaded from coaches, exercises, and payments.</p>
+              <p className="hh-card__delta hh-text-muted" style={{ marginTop: 12 }}>
+                Pending coach reviews: {loading ? "..." : stats.pendingCoaches}
+              </p>
             </div>
-
           </div>
-    </AdminPortalShell>
+        </div>
+      </main>
+    </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import NavComponent from "@/components/NavComponent";
 import { NAV_ITEMS_CLIENT } from "@/router/router";
 import { clientDashboardService, MyCoach, ClientWorkoutPlan, ClientMealPlan } from "@/services/clientDashboardService";
@@ -10,22 +11,36 @@ const LOGO_ICON =
   "https://www.figma.com/api/mcp/asset/b62d16c1-9ace-4db9-ac52-c4c34a9bdd3e";
 
 export default function ClientDashboardPage() {
-  const { user } = useAuthStore();
+  const router = useRouter();
+  const { token, user, hasHydrated } = useAuthStore();
   const [myCoach, setMyCoach] = useState<MyCoach | null>(null);
   const [workoutPlans, setWorkoutPlans] = useState<ClientWorkoutPlan[]>([]);
   const [mealPlans, setMealPlans] = useState<ClientMealPlan[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const userId = user?.id;
+  const userId = user?.id ?? user?.user_id;
+  const displayName = user?.first_name ?? user?.firstName ?? user?.name ?? "Client";
+  const hasAuth = Boolean(token && user && userId);
 
   useEffect(() => {
+    if (!hasHydrated) {
+      return;
+    }
+
+    if (!hasAuth) {
+      setLoading(false);
+      router.replace("/auth/login");
+      return;
+    }
+
     const loadData = async () => {
-      if (!userId) return;
+      const resolvedUserId = userId as number;
+
       try {
         const [coachData, workoutData, mealData] = await Promise.all([
-          clientDashboardService.getMyCoach(userId),
-          clientDashboardService.getMyWorkoutPlans(userId),
-          clientDashboardService.getMyMealPlans(userId),
+          clientDashboardService.getMyCoach(resolvedUserId),
+          clientDashboardService.getMyWorkoutPlans(resolvedUserId),
+          clientDashboardService.getMyMealPlans(resolvedUserId),
         ]);
         setMyCoach(coachData.coach);
         setWorkoutPlans(workoutData.workout_plans);
@@ -36,8 +51,27 @@ export default function ClientDashboardPage() {
         setLoading(false);
       }
     };
-    loadData();
-  }, [userId]);
+    void loadData();
+  }, [hasAuth, hasHydrated, router, token, user, userId]);
+
+  if (!hasHydrated) {
+    return (
+      <div className="hh-dash-root">
+        <main className="hh-dash-main">
+          <div className="hh-dash-content">
+            <div className="hh-card">
+              <h1 className="hh-page-title">Loading Dashboard</h1>
+              <p className="hh-page-subtitle">Restoring your session.</p>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (!hasAuth) {
+    return null;
+  }
 
   const activePlans = workoutPlans.filter((p) => p.status === "active").length;
   const activeMeals = mealPlans.filter((p) => p.status === "active").length;
@@ -68,7 +102,7 @@ export default function ClientDashboardPage() {
         <div className="hh-dash-content">
           <div>
             <h1 className="hh-page-title">MY DASHBOARD</h1>
-            <p className="hh-page-subtitle">Welcome back, {user?.id || "Client"}!</p>
+            <p className="hh-page-subtitle">Welcome back, {displayName}!</p>
           </div>
 
           {/* Stats */}

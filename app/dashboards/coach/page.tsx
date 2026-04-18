@@ -1,178 +1,100 @@
 "use client";
 
-import Link from "next/link";
-import {
-  LayoutDashboard,
-  Users,
-  Dumbbell,
-  Utensils,
-  Calendar,
-  MessageSquare,
-  User,
-  Settings,
-  DollarSign,
-  ClipboardList,
-  Bell
-} from "lucide-react";
+import { useEffect, useState } from "react";
+import { ClipboardList, DollarSign, Users, type LucideIcon } from "lucide-react";
 
-import { getDashboardRouteForRole } from "@/app/lib/api";
-import { useMemberPortal } from "@/app/lib/memberPortal";
+import NavComponent from "@/components/NavComponent";
+import { NAV_ITEMS_COACH } from "@/router/router";
+import { clientRequestService, type ClientRequest } from "@/services/ClientRequest";
+import { useAuthStore } from "@/store/authStore";
 
-const NAV_ITEMS = [
-  { label: "Dashboard", icon: LayoutDashboard, href: "/dashboards/coach", active: true },
-  { label: "My Clients", icon: Users, href: "/dashboards/coach/clients", active: false },
-  { label: "Workout Plans", icon: Dumbbell, href: "/dashboards/coach/workouts", active: false },
-  { label: "Meal Plans", icon: Utensils, href: "/dashboards/coach/meals", active: false },
-  { label: "Schedule", icon: Calendar, href: "/dashboards/coach/schedule", active: false },
-  { label: "Chat", icon: MessageSquare, href: "/dashboards/coach/chat", active: false },
-  { label: "Profile", icon: User, href: "/dashboards/coach/profile", active: false },
-  { label: "Settings", icon: Settings, href: "/dashboards/coach/settings", active: false },
-];
+const LOGO_ICON = "https://www.figma.com/api/mcp/asset/b62d16c1-9ace-4db9-ac52-c4c34a9bdd3e";
 
-const STAT_CARDS = [
-  { label: "Active Clients", icon: Users, value: "24", delta: "↑ +3 this month", deltaClass: "hh-text-green", sub: "2 pending requests" },
-  { label: "Earnings This Month", icon: DollarSign, value: "$3,576", delta: "↑ +12%", deltaClass: "hh-text-green", sub: "24 clients × $149" },
-  { label: "Pending Requests", icon: ClipboardList, value: "3", delta: "Awaiting response", deltaClass: "hh-text-muted", sub: "" },
-  { label: "Unread Messages", icon: Bell, value: "7", delta: "From 4 clients", deltaClass: "hh-text-muted", sub: "" },
-];
+interface CoachCard {
+  label: string;
+  icon: LucideIcon;
+  value: string;
+  helper: string;
+}
 
-const MONTHLY_REVENUE = [
-  { month: "Sep", revenue: 2800 },
-  { month: "Oct", revenue: 3100 },
-  { month: "Nov", revenue: 2900 },
-  { month: "Dec", revenue: 3300 },
-  { month: "Jan", revenue: 3500 },
-  { month: "Feb", revenue: 3576 },
-];
+export default function CoachDashboardPage() {
+  const user = useAuthStore((state) => state.user);
+  const [pendingRequests, setPendingRequests] = useState<ClientRequest[]>([]);
+  const [loading, setLoading] = useState(true);
 
-const RECENT_ACTIVITY = [
-  { text: "Alex M. completed Push Day", time: "2h ago" },
-  { text: "Sam C. sent a message", time: "3h ago" },
-  { text: "Taylor K. logged 10k steps", time: "5h ago" },
-  { text: "Morgan D. PR'd Bench Press", time: "1d ago" },
-];
+  useEffect(() => {
+    const coachId = user?.id;
+    if (!coachId) {
+      setLoading(false);
+      return;
+    }
 
-const maxRevenue = Math.max(...MONTHLY_REVENUE.map((d) => d.revenue));
+    const loadData = async () => {
+      try {
+        const response = await clientRequestService.getPending(coachId);
+        setPendingRequests(response.requests ?? []);
+      } catch (error) {
+        console.error("Failed to load coach dashboard", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-export default function CoachDashboard() {
-  const { displayName, isAuthenticated, isLoading, logout, profile, userRole } = useMemberPortal();
+    void loadData();
+  }, [user?.id]);
 
-  if (isLoading) {
-    return (
-      <div className="hh-dash-root">
-        <main className="hh-dash-main">
-          <div className="hh-dash-content">
-            <div className="hh-card">
-              <h1 className="hh-page-title">Loading Coach Portal</h1>
-              <p className="hh-page-subtitle">Checking your signed-in account and loading coach access.</p>
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="hh-dash-root">
-        <main className="hh-dash-main">
-          <div className="hh-dash-content">
-            <div className="hh-card">
-              <h1 className="hh-page-title">Coach Sign-In Required</h1>
-              <p className="hh-page-subtitle">
-                Sign in with a coach account to open the coach dashboard.
-              </p>
-              <div className="hh-portal-header__actions" style={{ marginTop: 16 }}>
-                <Link href="/auth/login" className="hh-portal-button hh-portal-button--primary">
-                  Go to Login
-                </Link>
-              </div>
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  if (userRole !== "coach") {
-    return (
-      <div className="hh-dash-root">
-        <main className="hh-dash-main">
-          <div className="hh-dash-content">
-            <div className="hh-card">
-              <h1 className="hh-page-title">Coach Access Only</h1>
-              <p className="hh-page-subtitle">
-                You are signed in as {profile.firstName} {profile.lastName} with the `{userRole}` role.
-              </p>
-              <div className="hh-portal-header__actions" style={{ marginTop: 16 }}>
-                <Link
-                  href={getDashboardRouteForRole(userRole)}
-                  className="hh-portal-button hh-portal-button--primary"
-                >
-                  Open My Dashboard
-                </Link>
-                <button type="button" className="hh-portal-button hh-portal-button--secondary" onClick={logout}>
-                  Log Out
-                </button>
-              </div>
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
+  const cards: CoachCard[] = [
+    {
+      label: "Pending Requests",
+      icon: ClipboardList,
+      value: loading ? "..." : String(pendingRequests.length),
+      helper: "Requests waiting for your response",
+    },
+    {
+      label: "Active Clients",
+      icon: Users,
+      value: "—",
+      helper: "Client total is available on the clients page",
+    },
+    {
+      label: "Revenue",
+      icon: DollarSign,
+      value: "—",
+      helper: "Monthly coach earnings are not wired yet",
+    },
+  ];
 
   return (
     <div className="hh-dash-root">
-      {/* SIDEBAR */}
       <aside className="hh-sidebar">
         <div className="hh-sidebar__header">
-          <Link href="/" className="hh-logo">
+          <a href="/" className="hh-logo">
             <div className="hh-logo__icon hh-logo__icon--md">
-              <Dumbbell size={16} color="white" />
+              <img src={LOGO_ICON} alt="" width={16} height={16} />
             </div>
             <span className="hh-logo__text hh-logo__text--md">HeraHealth</span>
-          </Link>
+          </a>
           <span className="hh-badge hh-badge--sm">Coach Portal</span>
         </div>
 
-        <nav className="hh-sidebar__nav" aria-label="Coach navigation">
-          {NAV_ITEMS.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className={
-                "hh-nav-link" + (item.active ? " hh-nav-link--active" : "")
-              }
-            >
-              <item.icon size={16} style={{ flexShrink: 0, marginRight: 8 }} />
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <NavComponent NAV_ITEMS={NAV_ITEMS_COACH} />
 
         <div className="hh-sidebar__footer">
-          <button type="button" className="hh-sidebar__back hh-sidebar__logout" onClick={logout}>
-            Log Out
-          </button>
-          <Link href="/" className="hh-sidebar__back">
-            ← Back to Home
-          </Link>
+          <a href="/" className="hh-sidebar__back">
+            Back to Home
+          </a>
         </div>
       </aside>
 
-      {/* MAIN */}
       <main className="hh-dash-main">
         <div className="hh-dash-content">
-          {/* Header */}
           <div>
             <h1 className="hh-page-title">COACH DASHBOARD</h1>
-            <p className="hh-page-subtitle">Welcome back, {displayName}</p>
+            <p className="hh-page-subtitle">Welcome back, {user?.name ?? "Coach"}.</p>
           </div>
 
-          {/* Stat cards */}
           <div className="hh-stats-grid">
-            {STAT_CARDS.map((card) => (
+            {cards.map((card) => (
               <div key={card.label} className="hh-card">
                 <div className="hh-card__header">
                   <span className="hh-card__label">{card.label}</span>
@@ -181,93 +103,59 @@ export default function CoachDashboard() {
                   </div>
                 </div>
                 <p className="hh-card__value">{card.value}</p>
-                {card.sub && (
-                  <p
-                    className="hh-text-muted"
-                    style={{ fontSize: "var(--hh-fs-12)", marginTop: 2 }}
-                  >
-                    {card.sub}
-                  </p>
-                )}
-                <p className={"hh-card__delta " + card.deltaClass}>
-                  {card.delta}
-                </p>
+                <p className="hh-card__delta hh-text-muted">{card.helper}</p>
               </div>
             ))}
           </div>
 
-          {/* Revenue chart + Recent Activity */}
-          <div className="hh-bottom-row">
-            {/* Monthly Revenue chart */}
-            <div className="hh-card" style={{ flex: 2 }}>
-              <h2 className="hh-panel-heading">Monthly Revenue</h2>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "flex-end",
-                  justifyContent: "space-around",
-                  height: 180,
-                  gap: 8,
-                }}
-              >
-                {MONTHLY_REVENUE.map((bar) => (
+          <div className="hh-card" style={{ padding: 0, overflow: "hidden" }}>
+            <div
+              style={{
+                padding: "16px 20px",
+                borderBottom: "1px solid var(--hh-border)",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <h2 className="hh-panel-heading">Recent Requests</h2>
+              <a href="/dashboards/coach/requests" className="hh-portal-inline-link">
+                View All
+              </a>
+            </div>
+
+            {loading ? <p style={{ padding: 24, color: "var(--hh-text-muted)" }}>Loading requests...</p> : null}
+
+            {!loading && pendingRequests.length === 0 ? (
+              <p style={{ padding: 24, color: "var(--hh-text-muted)" }}>No pending client requests.</p>
+            ) : null}
+
+            {!loading && pendingRequests.length > 0 ? (
+              <div>
+                {pendingRequests.slice(0, 5).map((request) => (
                   <div
-                    key={bar.month}
+                    key={request.request_id}
                     style={{
+                      padding: "16px 20px",
+                      borderBottom: "1px solid var(--hh-border)",
                       display: "flex",
-                      flexDirection: "column",
+                      justifyContent: "space-between",
                       alignItems: "center",
-                      gap: 8,
-                      flex: 1,
-                      height: "100%",
-                      justifyContent: "flex-end",
                     }}
                   >
-                    <div
-                      style={{
-                        width: "100%",
-                        display: "flex",
-                        alignItems: "flex-end",
-                        justifyContent: "center",
-                        flex: 1,
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: "100%",
-                          maxWidth: 40,
-                          height: `${(bar.revenue / maxRevenue) * 100}%`,
-                          background: "var(--hh-accent)",
-                          borderRadius: "6px 6px 0 0",
-                          minHeight: 8,
-                        }}
-                      />
+                    <div>
+                      <p style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>
+                        {request.client_name ?? `Client #${request.client_id}`}
+                      </p>
+                      <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--hh-text-muted)" }}>
+                        {request.client_email ?? "No email provided"}
+                      </p>
                     </div>
-                    <span
-                      style={{
-                        fontSize: "var(--hh-fs-12)",
-                        color: "var(--hh-text-muted)",
-                      }}
-                    >
-                      {bar.month}
-                    </span>
+                    <span className="hh-portal-pill">Pending</span>
                   </div>
                 ))}
               </div>
-            </div>
-
-            {/* Recent Activity */}
-            <div className="hh-card" style={{ flex: 1 }}>
-              <h2 className="hh-panel-heading">Recent Activity</h2>
-              <ul className="hh-activity-list">
-                {RECENT_ACTIVITY.map((item, i) => (
-                  <li key={i} className="hh-activity-item">
-                    <p className="hh-activity-item__text">{item.text}</p>
-                    <p className="hh-activity-item__time">{item.time}</p>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            ) : null}
           </div>
         </div>
       </main>
