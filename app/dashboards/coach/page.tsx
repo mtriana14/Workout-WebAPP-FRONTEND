@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ClipboardList, DollarSign, Users, type LucideIcon } from "lucide-react";
 
 import NavComponent from "@/components/NavComponent";
+import { SignOutButton } from "@/app/components/signOutButton";
 import { NAV_ITEMS_COACH } from "@/router/router";
 import { clientRequestService, type ClientRequest } from "@/services/ClientRequest";
 import { useAuthStore } from "@/store/authStore";
@@ -21,9 +22,10 @@ export default function CoachDashboardPage() {
   const user = useAuthStore((state) => state.user);
   const [pendingRequests, setPendingRequests] = useState<ClientRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const coachId = user?.id ?? user?.user_id;
+  const displayName = user?.first_name ?? user?.firstName ?? user?.name ?? "Coach";
 
   useEffect(() => {
-    const coachId = user?.id;
     if (!coachId) {
       setLoading(false);
       return;
@@ -41,7 +43,7 @@ export default function CoachDashboardPage() {
     };
 
     void loadData();
-  }, [user?.id]);
+  }, [coachId]);
 
   const cards: CoachCard[] = [
     {
@@ -80,6 +82,9 @@ export default function CoachDashboardPage() {
         <NavComponent NAV_ITEMS={NAV_ITEMS_COACH} />
 
         <div className="hh-sidebar__footer">
+          <SignOutButton className="hh-sidebar__back hh-sidebar__logout hh-sidebar__logout-button">
+            Sign Out
+          </SignOutButton>
           <a href="/" className="hh-sidebar__back">
             Back to Home
           </a>
@@ -90,7 +95,7 @@ export default function CoachDashboardPage() {
         <div className="hh-dash-content">
           <div>
             <h1 className="hh-page-title">COACH DASHBOARD</h1>
-            <p className="hh-page-subtitle">Welcome back, {user?.name ?? "Coach"}.</p>
+            <p className="hh-page-subtitle">Welcome back, {displayName}.</p>
           </div>
 
           <div className="hh-stats-grid">

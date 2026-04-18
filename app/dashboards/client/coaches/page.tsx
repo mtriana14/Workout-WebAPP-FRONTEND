@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import NavComponent from "@/components/NavComponent";
+import { SignOutButton } from "@/app/components/signOutButton";
 import { NAV_ITEMS_CLIENT } from "@/router/router";
 import { clientDashboardService, CoachInfo } from "@/services/clientDashboardService";
 import { useAuthStore } from "@/store/authStore";
@@ -19,7 +20,7 @@ export default function FindCoachesPage() {
   const [sending, setSending] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
-  const userId = user?.id;
+  const userId = user?.id ?? user?.user_id;
 
   const loadCoaches = async () => {
     try {
@@ -50,8 +51,8 @@ export default function FindCoachesPage() {
       showToast("Request sent successfully!", "success");
       setSelectedCoach(null);
       setRequestMessage("");
-    } catch {
-      showToast("Failed to send request", "error");
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Failed to send request", "error");
     } finally {
       setSending(false);
     }
@@ -162,6 +163,9 @@ export default function FindCoachesPage() {
         </div>
         <NavComponent NAV_ITEMS={NAV_ITEMS_CLIENT} />
         <div className="hh-sidebar__footer">
+          <SignOutButton className="hh-sidebar__back hh-sidebar__logout hh-sidebar__logout-button">
+            Sign Out
+          </SignOutButton>
           <a href="/" className="hh-sidebar__back">← Back to Home</a>
         </div>
       </aside>

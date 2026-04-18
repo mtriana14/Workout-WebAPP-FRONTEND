@@ -1,25 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dumbbell, Plus, Trash2 } from "lucide-react";
+import NavComponent from "@/components/NavComponent";
+import { SignOutButton } from "@/app/components/signOutButton";
+import { NAV_ITEMS_COACH } from "@/router/router";
+import { clientRequestService } from "@/services/ClientRequest";
+import { mealPlanService } from "@/services/mealPlanService";
+import { useAuthStore } from "@/store/authStore";
 
-const NAV_ITEMS = [
-  { label: "Dashboard",     href: "/dashboards/coach",          active: false },
-  { label: "My Clients",    href: "/dashboards/coach/clients",  active: false },
-  { label: "Workout Plans", href: "/dashboards/coach/workouts", active: false },
-  { label: "Meal Plans",    href: "/dashboards/coach/meals",    active: true  },
-  { label: "Schedule",      href: "/dashboards/coach/schedule", active: false },
-  { label: "Chat",          href: "/dashboards/coach/chat",     active: false },
-  { label: "Profile",       href: "/dashboards/coach/profile",  active: false },
-  { label: "Settings",      href: "/dashboards/coach/settings", active: false },
-];
-
-const MOCK_CLIENTS = [
-  { id: "1", name: "Alex Morgan"   },
-  { id: "2", name: "Sam Chen"      },
-  { id: "3", name: "Taylor Kim"    },
-  { id: "4", name: "Morgan Davis"  },
-];
+interface CoachClientOption {
+  id: number;
+  name: string;
+}
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
@@ -53,13 +46,66 @@ const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
 type MealType = typeof MEAL_TYPES[number];
 
 export default function CoachMealPlans() {
-  const [selectedClient, setSelectedClient] = useState("1");
+  const user = useAuthStore((state) => state.user);
+  const coachUserId = user?.id ?? user?.user_id;
+  const [clients, setClients] = useState<CoachClientOption[]>([]);
+  const [selectedClientId, setSelectedClientId] = useState("");
   const [planName, setPlanName] = useState("Week 1 Nutrition Plan");
   const [plan, setPlan] = useState<WeekPlan>(MOCK_PLAN);
   const [selectedDay, setSelectedDay] = useState("Monday");
   const [editingMeal, setEditingMeal] = useState<{ mealType: MealType; meal: Meal } | null>(null);
+  const [loadingClients, setLoadingClients] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  useEffect(() => {
+    if (!coachUserId) {
+      setLoadingClients(false);
+      return;
+    }
+
+    const loadClients = async () => {
+      try {
+        setLoadingClients(true);
+        const response = await clientRequestService.getAll(coachUserId);
+        const acceptedClients = (response.requests ?? [])
+          .filter((request) => request.status === "accepted")
+          .map((request) => ({
+            id: request.client_id,
+            name: request.client_name ?? `Client #${request.client_id}`,
+          }));
+
+        const uniqueClients = acceptedClients.filter(
+          (client, index, array) => array.findIndex((item) => item.id === client.id) === index,
+        );
+
+        setClients(uniqueClients);
+        setSelectedClientId((current) => current || String(uniqueClients[0]?.id ?? ""));
+      } catch (error) {
+        setToast({
+          message: error instanceof Error ? error.message : "Failed to load connected clients.",
+          type: "error",
+        });
+      } finally {
+        setLoadingClients(false);
+      }
+    };
+
+    void loadClients();
+  }, [coachUserId]);
+
+  useEffect(() => {
+    if (!toast) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => setToast(null), 3000);
+    return () => window.clearTimeout(timeoutId);
+  }, [toast]);
 
   const dayPlan = plan[selectedDay];
+  const selectedClient = clients.find((client) => String(client.id) === selectedClientId);
 
   const totalCalories = MEAL_TYPES.reduce((sum, type) => {
     return sum + (dayPlan[type]?.calories ?? 0);
@@ -91,8 +137,60 @@ export default function CoachMealPlans() {
     }));
   };
 
+  const handleAssignPlan = async () => {
+    if (!coachUserId) {
+      setToast({ message: "You need to be signed in as a coach.", type: "error" });
+      return;
+    }
+
+    if (!selectedClientId) {
+      setToast({ message: "Connect with a client before assigning a meal plan.", type: "error" });
+      return;
+    }
+
+    if (!planName.trim()) {
+      setToast({ message: "Meal plan name is required.", type: "error" });
+      return;
+    }
+
+    const descriptionLines = DAYS.map((day) => {
+      const meals = MEAL_TYPES
+        .map((mealType) => {
+          const meal = plan[day][mealType];
+          return meal ? `${mealType}: ${meal.name} (${meal.calories} cal, P${meal.protein}/C${meal.carbs}/F${meal.fat})` : null;
+        })
+        .filter(Boolean);
+
+      return `${day}: ${meals.length > 0 ? meals.join("; ") : "No meals assigned"}`;
+    });
+
+    try {
+      setIsSaving(true);
+      await mealPlanService.create(coachUserId, {
+        client_id: Number(selectedClientId),
+        name: planName.trim(),
+        description: descriptionLines.join("\n"),
+      });
+      setSaved(true);
+      setToast({ message: `Meal plan assigned to ${selectedClient?.name ?? "client"}.`, type: "success" });
+      window.setTimeout(() => setSaved(false), 2500);
+    } catch (error) {
+      setToast({
+        message: error instanceof Error ? error.message : "Failed to assign meal plan.",
+        type: "error",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="hh-dash-root">
+      {toast ? (
+        <div style={{ position: "fixed", top: 20, right: 20, padding: "12px 20px", borderRadius: 8, backgroundColor: toast.type === "success" ? "var(--hh-text-green)" : "var(--hh-error)", color: "white", fontSize: 14, fontWeight: 500, zIndex: 1001, boxShadow: "0 4px 12px rgba(0,0,0,0.15)" }}>
+          {toast.message}
+        </div>
+      ) : null}
 
       {/* SIDEBAR */}
       <aside className="hh-sidebar">
@@ -106,19 +204,12 @@ export default function CoachMealPlans() {
           <span className="hh-badge hh-badge--sm">Coach Portal</span>
         </div>
 
-        <nav className="hh-sidebar__nav" aria-label="Coach navigation">
-          {NAV_ITEMS.map((item) => (
-            <a
-              key={item.label}
-              href={item.href}
-              className={"hh-nav-link" + (item.active ? " hh-nav-link--active" : "")}
-            >
-              {item.label}
-            </a>
-          ))}
-        </nav>
+        <NavComponent NAV_ITEMS={NAV_ITEMS_COACH} />
 
         <div className="hh-sidebar__footer">
+          <SignOutButton className="hh-sidebar__back hh-sidebar__logout hh-sidebar__logout-button">
+            Sign Out
+          </SignOutButton>
           <a href="/" className="hh-sidebar__back">← Back to Home</a>
         </div>
       </aside>
@@ -157,12 +248,17 @@ export default function CoachMealPlans() {
                 <select
                   className="hh-input hh-input--no-icon-left hh-input--no-icon-right"
                   style={{ appearance: "auto" }}
-                  value={selectedClient}
-                  onChange={(e) => setSelectedClient(e.target.value)}
+                  value={selectedClientId}
+                  onChange={(e) => setSelectedClientId(e.target.value)}
+                  disabled={loadingClients || clients.length === 0}
                 >
-                  {MOCK_CLIENTS.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
+                  {loadingClients ? <option value="">Loading connected clients...</option> : null}
+                  {!loadingClients && clients.length === 0 ? <option value="">No connected clients yet</option> : null}
+                  {!loadingClients && clients.length > 0
+                    ? clients.map((client) => (
+                        <option key={client.id} value={String(client.id)}>{client.name}</option>
+                      ))
+                    : null}
                 </select>
               </div>
             </div>
@@ -278,8 +374,8 @@ export default function CoachMealPlans() {
                 </div>
               </div>
 
-              <button className="btn btn--primary" style={{ width: "100%" }}>
-                Save &amp; Assign
+              <button className="btn btn--primary" style={{ width: "100%" }} onClick={handleAssignPlan} disabled={isSaving || loadingClients || clients.length === 0}>
+                {isSaving ? "Saving..." : saved ? "✓ Assigned!" : "Save & Assign"}
               </button>
             </div>
 

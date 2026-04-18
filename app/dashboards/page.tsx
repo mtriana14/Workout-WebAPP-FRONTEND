@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { SignOutButton } from "@/app/components/signOutButton";
 import { getDashboardRouteForRole, getStoredAuthSession } from "@/app/lib/api";
 import { ROLE_REDIRECTS } from "@/router/router";
 import { useAuthStore } from "@/store/authStore";
@@ -51,6 +53,14 @@ export default function DashboardsPage() {
           <div className="hh-card">
             <h1 className="hh-page-title">Loading Dashboard</h1>
             <p className="hh-page-subtitle">Routing you to the correct portal.</p>
+            <div className="hh-portal-header__actions" style={{ marginTop: 16 }}>
+              <SignOutButton className="hh-portal-button hh-portal-button--secondary">
+                Sign Out
+              </SignOutButton>
+              <Link href="/" className="hh-portal-button hh-portal-button--primary">
+                Back to Home
+              </Link>
+            </div>
           </div>
         </div>
       </main>

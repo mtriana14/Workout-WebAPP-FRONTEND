@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import NavComponent from "@/components/NavComponent";
+import { SignOutButton } from "@/app/components/signOutButton";
 import { NAV_ITEMS_CLIENT } from "@/router/router";
 import { clientDashboardService, MyCoach, ClientWorkoutPlan, ClientMealPlan } from "@/services/clientDashboardService";
 import { useAuthStore } from "@/store/authStore";
@@ -93,6 +94,9 @@ export default function ClientDashboardPage() {
         <NavComponent NAV_ITEMS={NAV_ITEMS_CLIENT} />
 
         <div className="hh-sidebar__footer">
+          <SignOutButton className="hh-sidebar__back hh-sidebar__logout hh-sidebar__logout-button">
+            Sign Out
+          </SignOutButton>
           <a href="/" className="hh-sidebar__back">← Back to Home</a>
         </div>
       </aside>

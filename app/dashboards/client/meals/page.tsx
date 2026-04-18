@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import NavComponent from "@/components/NavComponent";
+import { SignOutButton } from "@/app/components/signOutButton";
 import { NAV_ITEMS_CLIENT } from "@/router/router";
 import { clientDashboardService, ClientMealPlan } from "@/services/clientDashboardService";
 import { useAuthStore } from "@/store/authStore";
@@ -22,7 +23,7 @@ export default function MyMealsPage() {
   const [filter, setFilter] = useState<string>("all");
   const [selectedPlan, setSelectedPlan] = useState<ClientMealPlan | null>(null);
 
-  const userId = user?.id;
+  const userId = user?.id ?? user?.user_id;
 
   useEffect(() => {
     const loadPlans = async () => {
@@ -99,6 +100,9 @@ export default function MyMealsPage() {
         </div>
         <NavComponent NAV_ITEMS={NAV_ITEMS_CLIENT} />
         <div className="hh-sidebar__footer">
+          <SignOutButton className="hh-sidebar__back hh-sidebar__logout hh-sidebar__logout-button">
+            Sign Out
+          </SignOutButton>
           <a href="/" className="hh-sidebar__back">← Back to Home</a>
         </div>
       </aside>

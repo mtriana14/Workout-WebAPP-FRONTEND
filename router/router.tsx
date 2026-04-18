@@ -1,18 +1,21 @@
 import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard, 
-  Users, 
+  Users,
   UserSquare2, 
   Dumbbell, 
   CreditCard, 
   Calendar, 
   Contact2, 
   ClipboardList, 
+  MessageCircle,
   Search, 
+  Settings,
   Activity, 
   Utensils, 
   TrendingUp,
-  Bell
+  Bell,
+  User
 } from "lucide-react";
 
 export interface NavItem {
@@ -42,6 +45,12 @@ export const NAV_ITEMS_COACH: NavItem[] = [
   { label: "My Clients",   icon: Contact2,        href: "/dashboards/coach/clients",       active: false },
   { label: "Requests",     icon: ClipboardList,   href: "/dashboards/coach/requests",      active: false },
   { label: "Availability", icon: Calendar,        href: "/dashboards/coach/availability",  active: false },
+  { label: "Workout Plans", icon: Activity,       href: "/dashboards/coach/workouts",      active: false },
+  { label: "Meal Plans",    icon: Utensils,       href: "/dashboards/coach/meals",         active: false },
+  { label: "Schedule",      icon: Bell,           href: "/dashboards/coach/schedule",      active: false },
+  { label: "Chat",          icon: MessageCircle,  href: "/dashboards/coach/chat",          active: false },
+  { label: "Profile",       icon: User,           href: "/dashboards/coach/profile",       active: false },
+  { label: "Settings",      icon: Settings,       href: "/dashboards/coach/settings",      active: false },
 ];
 
 export const NAV_ITEMS_CLIENT: NavItem[] = [

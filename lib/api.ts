@@ -45,11 +45,17 @@ export async function apiClient<T>(
     cache: "no-store",
   });
 
+  const json = await res.json().catch(() => null);
+
   if (!res.ok) {
-    throw new Error(`API error: ${res.status} ${res.statusText}`);
+    const message =
+      json && typeof json === "object"
+        ? ((json as { error?: string; message?: string }).error ??
+          (json as { error?: string; message?: string }).message)
+        : null;
+
+    throw new Error(message ?? `API error: ${res.status} ${res.statusText}`);
   }
-  console.log(token);
-  const json = await res.json();
 
   if (json && typeof json === "object" && "data" in json) {
     return json.data as T;

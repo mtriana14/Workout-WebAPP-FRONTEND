@@ -5,7 +5,7 @@ export interface Exercise {
   name: string;
   description: string;
   muscle_group: string;
-  equipment: string;
+  equipment?: string;
   difficulty: "beginner" | "intermediate" | "advanced";
   created_at: string;
   updated_at?: string;
@@ -22,6 +22,7 @@ interface ExerciseResponse {
 
 interface MessageResponse {
   message: string;
+  created_count?: number;
 }
 
 export interface CreateExerciseData {
@@ -53,6 +54,11 @@ export const exerciseService = {
     apiClient<ExerciseResponse>("admin/exercises", {
       method: "POST",
       body: data,
+    }),
+
+  createCommon: () =>
+    apiClient<MessageResponse>("admin/exercises/common", {
+      method: "POST",
     }),
 
   // Update exercise

@@ -1,17 +1,9 @@
 "use client";
 
 import { Dumbbell } from "lucide-react";
-
-const NAV_ITEMS = [
-  { label: "Dashboard",     href: "/dashboards/coach",          active: false },
-  { label: "My Clients",    href: "/dashboards/coach/clients",  active: false },
-  { label: "Workout Plans", href: "/dashboards/coach/workouts", active: false },
-  { label: "Meal Plans",    href: "/dashboards/coach/meals",    active: false },
-  { label: "Schedule",      href: "/dashboards/coach/schedule", active: false },
-  { label: "Chat",          href: "/dashboards/coach/chat",     active: false },
-  { label: "Profile",       href: "/dashboards/coach/profile",  active: true  },
-  { label: "Settings",      href: "/dashboards/coach/settings", active: false },
-];
+import NavComponent from "@/components/NavComponent";
+import { SignOutButton } from "@/app/components/signOutButton";
+import { NAV_ITEMS_COACH } from "@/router/router";
 
 const MOCK_COACH = {
   name: "Jordan Rivera",
@@ -37,19 +29,12 @@ export default function CoachProfile() {
           <span className="hh-badge hh-badge--sm">Coach Portal</span>
         </div>
 
-        <nav className="hh-sidebar__nav" aria-label="Coach navigation">
-          {NAV_ITEMS.map((item) => (
-            <a
-              key={item.label}
-              href={item.href}
-              className={"hh-nav-link" + (item.active ? " hh-nav-link--active" : "")}
-            >
-              {item.label}
-            </a>
-          ))}
-        </nav>
+        <NavComponent NAV_ITEMS={NAV_ITEMS_COACH} />
 
         <div className="hh-sidebar__footer">
+          <SignOutButton className="hh-sidebar__back hh-sidebar__logout hh-sidebar__logout-button">
+            Sign Out
+          </SignOutButton>
           <a href="/" className="hh-sidebar__back">← Back to Home</a>
         </div>
       </aside>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import NavComponent from "@/components/NavComponent";
+import { SignOutButton } from "@/app/components/signOutButton";
 import { NAV_ITEMS_COACH } from "@/router/router";
 import { availabilityService, AvailabilitySlot } from "@/services/availabilityService";
 import { useAuthStore } from "@/store/authStore";
@@ -38,7 +39,7 @@ export default function AvailabilityPage() {
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
-  const userId = user?.id;
+  const userId = user?.id ?? user?.user_id;
 
   // Load existing availability
   useEffect(() => {
@@ -154,6 +155,9 @@ export default function AvailabilityPage() {
         <NavComponent NAV_ITEMS={NAV_ITEMS_COACH} />
 
         <div className="hh-sidebar__footer">
+          <SignOutButton className="hh-sidebar__back hh-sidebar__logout hh-sidebar__logout-button">
+            Sign Out
+          </SignOutButton>
           <a href="/" className="hh-sidebar__back">← Back to Home</a>
         </div>
       </aside>

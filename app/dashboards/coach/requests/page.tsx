@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import NavComponent from "@/components/NavComponent";
- import { useAuthStore } from "@/store/authStore";
+import { SignOutButton } from "@/app/components/signOutButton";
+import { useAuthStore } from "@/store/authStore";
 import { ClientRequest, clientRequestService } from "@/services/ClientRequest";
 import { NAV_ITEMS_COACH } from "@/router/router";
 
@@ -24,7 +25,7 @@ export default function ClientRequestsPage() {
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
-  const coachId = user?.id;
+  const coachId = user?.id ?? user?.user_id;
 
   const loadRequests = async () => {
     if (!coachId) return;
@@ -116,6 +117,9 @@ export default function ClientRequestsPage() {
         <NavComponent NAV_ITEMS={NAV_ITEMS_COACH} />
 
         <div className="hh-sidebar__footer">
+          <SignOutButton className="hh-sidebar__back hh-sidebar__logout hh-sidebar__logout-button">
+            Sign Out
+          </SignOutButton>
           <a href="/" className="hh-sidebar__back">← Back to Home</a>
         </div>
       </aside>

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import NavComponent from "@/components/NavComponent";
+import { SignOutButton } from "@/app/components/signOutButton";
 import { NAV_ITEMS_COACH } from "@/router/router";
 import { clientRequestService, type ClientRequest } from "@/services/ClientRequest";
 import { useAuthStore } from "@/store/authStore";
@@ -17,7 +18,7 @@ export default function CoachClientsPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const coachId = user?.id;
+    const coachId = user?.id ?? user?.user_id;
     if (!coachId) {
       setLoading(false);
       return;
@@ -36,7 +37,7 @@ export default function CoachClientsPage() {
     };
 
     void loadClients();
-  }, [user?.id]);
+  }, [user?.id, user?.user_id]);
 
   const filteredClients = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -65,6 +66,9 @@ export default function CoachClientsPage() {
         <NavComponent NAV_ITEMS={NAV_ITEMS_COACH} />
 
         <div className="hh-sidebar__footer">
+          <SignOutButton className="hh-sidebar__back hh-sidebar__logout hh-sidebar__logout-button">
+            Sign Out
+          </SignOutButton>
           <a href="/" className="hh-sidebar__back">
             Back to Home
           </a>

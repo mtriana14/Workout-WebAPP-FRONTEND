@@ -321,13 +321,17 @@ export default function ExercisesPage() {
                 <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 6 }}>
                   Equipment
                 </label>
-                <input
-                  type="text"
+                <select
                   className="hh-input"
-                  value={formData.equipment}
-                  onChange={(e) => setFormData({ ...formData, equipment: e.target.value })}
-                  placeholder="e.g., Barbell, Dumbbells, None"
-                />
+                  value={formData.equipment_type}
+                  onChange={(e) => setFormData({ ...formData, equipment_type: e.target.value })}
+                >
+                  {EQUIPMENT_TYPES.map((equipment) => (
+                    <option key={equipment} value={equipment}>
+                      {equipment.charAt(0).toUpperCase() + equipment.slice(1)}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -435,7 +439,7 @@ export default function ExercisesPage() {
             </div>
             <div className="hh-card" style={{ padding: 20, textAlign: "center" }}>
               <p style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>
-                {new Set(exercises.map((e) => e.equipment).filter(Boolean)).size}
+                {new Set(exercises.map((e) => e.equipment_type).filter(Boolean)).size}
               </p>
               <p style={{ fontSize: 12, color: "var(--hh-text-muted)", margin: "4px 0 0" }}>
                 Equipment Types
