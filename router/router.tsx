@@ -20,7 +20,7 @@ import {
 
 export interface NavItem {
   label: string;
-  icon: LucideIcon | string;
+  icon: LucideIcon; // <-- Removed `| string`
   href: string;
   active: boolean;
 }
