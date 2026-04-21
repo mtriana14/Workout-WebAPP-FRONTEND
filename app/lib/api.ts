@@ -90,7 +90,7 @@ export function getDashboardRouteForRole(role: string) {
     return "/dashboards/coach";
   }
 
-  return "/dashboards/client";
+  return "/dashboards/user";
 }
 
 async function apiRequest<T>(path: string, init: RequestInit = {}, token?: string): Promise<T> {
@@ -120,13 +120,6 @@ export function loginRequest(email: string, password: string) {
   return apiRequest<AuthSessionLikeResponse>("/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
-  });
-}
-
-export function googleSignInRequest(idToken: string) {
-  return apiRequest<AuthSessionLikeResponse>("/auth/google", {
-    method: "POST",
-    body: JSON.stringify({ id_token: idToken }),
   });
 }
 

@@ -68,7 +68,7 @@ export default function ClientDashboardPage() {
         <div className="hh-dash-content">
           <div>
             <h1 className="hh-page-title">MY DASHBOARD</h1>
-            <p className="hh-page-subtitle">Welcome back, {user?.first_name ?? user?.firstName ?? user?.name ?? "Client"}!</p>
+            <p className="hh-page-subtitle">Welcome back, {user?.id || "Client"}!</p>
           </div>
 
           {/* Stats */}
