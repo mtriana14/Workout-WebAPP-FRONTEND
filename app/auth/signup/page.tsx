@@ -3,9 +3,12 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Dumbbell, User, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { GoogleLogin } from "@react-oauth/google";
+import type { CredentialResponse } from "@react-oauth/google";
 
 import {
   getDashboardRouteForRole,
+  googleSignInRequest,
   signupRequest,
   storeAuthSession,
 } from "@/app/lib/api";
@@ -19,6 +22,27 @@ export default function CreateAccountPage() {
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleGoogleSuccess(credentialResponse: CredentialResponse) {
+    if (!credentialResponse.credential) {
+      setError("Google sign-in failed. Please try again.");
+      return;
+    }
+    setError("");
+    setIsSubmitting(true);
+    try {
+      const response = await googleSignInRequest(credentialResponse.credential);
+      storeAuthSession({ token: response.token, user: response.user });
+      window.location.assign("/auth/onboarding");
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : "Google sign-in failed.");
+      setIsSubmitting(false);
+    }
+  }
+
+  function handleGoogleError() {
+    setError("Google sign-in failed. Please try again.");
+  }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -89,9 +113,7 @@ export default function CreateAccountPage() {
           <h1 className="auth-heading__title">Create your account</h1>
           <p className="auth-heading__sub">This will create a real user in the Flask backend and SQL database.</p>
 
-          <button className="btn btn--google" type="button" aria-label="Continue with Google">
-            Continue with Google
-          </button>
+          <GoogleLogin onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
 
           <div className="hh-divider" aria-hidden="true">
             <div className="hh-divider__line" />
