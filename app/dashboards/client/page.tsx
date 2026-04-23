@@ -8,8 +8,7 @@ import { NAV_ITEMS_CLIENT } from "@/router/router";
 import { clientDashboardService, MyCoach, ClientWorkoutPlan, ClientMealPlan } from "@/services/clientDashboardService";
 import { useAuthStore } from "@/store/authStore";
 
-const LOGO_ICON =
-  "https://www.figma.com/api/mcp/asset/b62d16c1-9ace-4db9-ac52-c4c34a9bdd3e";
+import { Dumbbell } from "lucide-react";
 
 export default function ClientDashboardPage() {
   const router = useRouter();
@@ -84,7 +83,7 @@ export default function ClientDashboardPage() {
         <div className="hh-sidebar__header">
           <a href="/" className="hh-logo">
             <div className="hh-logo__icon hh-logo__icon--md">
-              <img src={LOGO_ICON} alt="" width={16} height={16} />
+              <Dumbbell size={16} color="white" />
             </div>
             <span className="hh-logo__text hh-logo__text--md">HeraHealth</span>
           </a>
