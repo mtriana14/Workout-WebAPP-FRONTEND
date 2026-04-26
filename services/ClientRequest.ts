@@ -29,7 +29,7 @@ export const clientRequestService = {
 
   // Get all requests for a coach (all statuses)
   getAll: (coachId: number) =>
-    apiClient<RequestsResponse>(`coach/${coachId}/requests/all`, {
+    apiClient<RequestsResponse>(`coach/${coachId}/requests`, {
       method: "GET",
     }),
 

@@ -4,17 +4,24 @@ import { useEffect, useState } from "react";
 import NavComponent from "@/components/NavComponent";
 import { SignOutButton } from "@/app/components/signOutButton";
 import { NAV_ITEMS_COACH } from "@/router/router";
-import { availabilityService, AvailabilitySlot } from "@/services/availabilityService";
+import {
+  availabilityService,
+  AvailabilitySlot,
+} from "@/services/availabilityService";
 import { useAuthStore } from "@/store/authStore";
-
-const LOGO_ICON =
-  "https://www.figma.com/api/mcp/asset/b62d16c1-9ace-4db9-ac52-c4c34a9bdd3e";
+import { Dumbbell } from "lucide-react";
 
 const DAYS_OF_WEEK = [
-  "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
 ] as const;
 
-type DayOfWeek = typeof DAYS_OF_WEEK[number];
+type DayOfWeek = (typeof DAYS_OF_WEEK)[number];
 
 interface DaySchedule {
   enabled: boolean;
@@ -23,21 +30,25 @@ interface DaySchedule {
 }
 
 const DEFAULT_SCHEDULE: Record<DayOfWeek, DaySchedule> = {
-  Monday:    { enabled: false, start_time: "09:00", end_time: "17:00" },
-  Tuesday:   { enabled: false, start_time: "09:00", end_time: "17:00" },
+  Monday: { enabled: false, start_time: "09:00", end_time: "17:00" },
+  Tuesday: { enabled: false, start_time: "09:00", end_time: "17:00" },
   Wednesday: { enabled: false, start_time: "09:00", end_time: "17:00" },
-  Thursday:  { enabled: false, start_time: "09:00", end_time: "17:00" },
-  Friday:    { enabled: false, start_time: "09:00", end_time: "17:00" },
-  Saturday:  { enabled: false, start_time: "10:00", end_time: "14:00" },
-  Sunday:    { enabled: false, start_time: "10:00", end_time: "14:00" },
+  Thursday: { enabled: false, start_time: "09:00", end_time: "17:00" },
+  Friday: { enabled: false, start_time: "09:00", end_time: "17:00" },
+  Saturday: { enabled: false, start_time: "10:00", end_time: "14:00" },
+  Sunday: { enabled: false, start_time: "10:00", end_time: "14:00" },
 };
 
 export default function AvailabilityPage() {
   const { user } = useAuthStore();
-  const [schedule, setSchedule] = useState<Record<DayOfWeek, DaySchedule>>(DEFAULT_SCHEDULE);
+  const [schedule, setSchedule] =
+    useState<Record<DayOfWeek, DaySchedule>>(DEFAULT_SCHEDULE);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
 
   const userId = user?.id ?? user?.user_id;
 
@@ -47,7 +58,7 @@ export default function AvailabilityPage() {
       if (!userId) return;
       try {
         const data = await availabilityService.get(userId);
-        
+
         // Convert API response to schedule format
         const newSchedule = { ...DEFAULT_SCHEDULE };
         data.availability.forEach((slot) => {
@@ -82,7 +93,11 @@ export default function AvailabilityPage() {
   };
 
   // Update time for a day
-  const updateTime = (day: DayOfWeek, field: "start_time" | "end_time", value: string) => {
+  const updateTime = (
+    day: DayOfWeek,
+    field: "start_time" | "end_time",
+    value: string,
+  ) => {
     setSchedule((prev) => ({
       ...prev,
       [day]: { ...prev[day], [field]: value },
@@ -92,13 +107,12 @@ export default function AvailabilityPage() {
   // Save availability
   const handleSave = async () => {
     if (!userId) return;
-    
+
     setSaving(true);
     try {
       // Convert schedule to API format
-      const slots: Omit<AvailabilitySlot, "availability_id">[] = DAYS_OF_WEEK
-        .filter((day) => schedule[day].enabled)
-        .map((day) => ({
+      const slots: Omit<AvailabilitySlot, "availability_id">[] =
+        DAYS_OF_WEEK.filter((day) => schedule[day].enabled).map((day) => ({
           day_of_week: day,
           start_time: schedule[day].start_time,
           end_time: schedule[day].end_time,
@@ -128,7 +142,10 @@ export default function AvailabilityPage() {
             right: 20,
             padding: "12px 20px",
             borderRadius: 8,
-            backgroundColor: toast.type === "success" ? "var(--hh-text-green)" : "var(--hh-error)",
+            backgroundColor:
+              toast.type === "success"
+                ? "var(--hh-text-green)"
+                : "var(--hh-error)",
             color: "white",
             fontSize: 14,
             fontWeight: 500,
@@ -145,7 +162,7 @@ export default function AvailabilityPage() {
         <div className="hh-sidebar__header">
           <a href="/" className="hh-logo">
             <div className="hh-logo__icon hh-logo__icon--md">
-              <img src={LOGO_ICON} alt="" width={16} height={16} />
+              <Dumbbell size={16} color="white" />
             </div>
             <span className="hh-logo__text hh-logo__text--md">HeraHealth</span>
           </a>
@@ -158,17 +175,27 @@ export default function AvailabilityPage() {
           <SignOutButton className="hh-sidebar__back hh-sidebar__logout hh-sidebar__logout-button">
             Sign Out
           </SignOutButton>
-          <a href="/" className="hh-sidebar__back">← Back to Home</a>
+          <a href="/" className="hh-sidebar__back">
+            ← Back to Home
+          </a>
         </div>
       </aside>
 
       {/* Main */}
       <main className="hh-dash-main">
         <div className="hh-dash-content">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+            }}
+          >
             <div>
               <h1 className="hh-page-title">AVAILABILITY</h1>
-              <p className="hh-page-subtitle">Set your weekly coaching schedule</p>
+              <p className="hh-page-subtitle">
+                Set your weekly coaching schedule
+              </p>
             </div>
             <button
               onClick={handleSave}
@@ -190,17 +217,46 @@ export default function AvailabilityPage() {
           </div>
 
           {/* Summary Card */}
-          <div className="hh-card" style={{ padding: 20, display: "flex", gap: 24 }}>
+          <div
+            className="hh-card"
+            style={{ padding: 20, display: "flex", gap: 24 }}
+          >
             <div>
-              <p style={{ fontSize: 12, color: "var(--hh-text-muted)", margin: 0, textTransform: "uppercase" }}>
+              <p
+                style={{
+                  fontSize: 12,
+                  color: "var(--hh-text-muted)",
+                  margin: 0,
+                  textTransform: "uppercase",
+                }}
+              >
                 Active Days
               </p>
-              <p style={{ fontSize: 28, fontWeight: 700, margin: "4px 0 0", color: "var(--hh-text-green)" }}>
+              <p
+                style={{
+                  fontSize: 28,
+                  fontWeight: 700,
+                  margin: "4px 0 0",
+                  color: "var(--hh-text-green)",
+                }}
+              >
                 {activeDays} / 7
               </p>
             </div>
-            <div style={{ borderLeft: "1px solid var(--hh-border)", paddingLeft: 24 }}>
-              <p style={{ fontSize: 12, color: "var(--hh-text-muted)", margin: 0, textTransform: "uppercase" }}>
+            <div
+              style={{
+                borderLeft: "1px solid var(--hh-border)",
+                paddingLeft: 24,
+              }}
+            >
+              <p
+                style={{
+                  fontSize: 12,
+                  color: "var(--hh-text-muted)",
+                  margin: 0,
+                  textTransform: "uppercase",
+                }}
+              >
                 Status
               </p>
               <p style={{ fontSize: 16, fontWeight: 600, margin: "8px 0 0" }}>
@@ -211,12 +267,21 @@ export default function AvailabilityPage() {
 
           {/* Schedule */}
           <div className="hh-card" style={{ padding: 0, overflow: "hidden" }}>
-            <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--hh-border)" }}>
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Weekly Schedule</h3>
+            <div
+              style={{
+                padding: "16px 20px",
+                borderBottom: "1px solid var(--hh-border)",
+              }}
+            >
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>
+                Weekly Schedule
+              </h3>
             </div>
 
             {loading ? (
-              <p style={{ padding: 24, color: "var(--hh-text-muted)" }}>Loading...</p>
+              <p style={{ padding: 24, color: "var(--hh-text-muted)" }}>
+                Loading...
+              </p>
             ) : (
               <div>
                 {DAYS_OF_WEEK.map((day) => (
@@ -228,7 +293,9 @@ export default function AvailabilityPage() {
                       display: "flex",
                       alignItems: "center",
                       gap: 20,
-                      backgroundColor: schedule[day].enabled ? "transparent" : "var(--hh-bg-secondary)",
+                      backgroundColor: schedule[day].enabled
+                        ? "transparent"
+                        : "var(--hh-bg-secondary)",
                     }}
                   >
                     {/* Toggle */}
@@ -240,7 +307,9 @@ export default function AvailabilityPage() {
                         borderRadius: 14,
                         border: "none",
                         cursor: "pointer",
-                        backgroundColor: schedule[day].enabled ? "var(--hh-text-green)" : "var(--hh-border)",
+                        backgroundColor: schedule[day].enabled
+                          ? "var(--hh-text-green)"
+                          : "var(--hh-border)",
                         position: "relative",
                         transition: "background-color 0.2s",
                       }}
@@ -266,7 +335,9 @@ export default function AvailabilityPage() {
                         width: 100,
                         fontSize: 14,
                         fontWeight: 600,
-                        color: schedule[day].enabled ? "var(--hh-text-primary)" : "var(--hh-text-muted)",
+                        color: schedule[day].enabled
+                          ? "var(--hh-text-primary)"
+                          : "var(--hh-text-muted)",
                       }}
                     >
                       {day}
@@ -274,25 +345,41 @@ export default function AvailabilityPage() {
 
                     {/* Time Inputs */}
                     {schedule[day].enabled ? (
-                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 12,
+                        }}
+                      >
                         <input
                           type="time"
                           value={schedule[day].start_time}
-                          onChange={(e) => updateTime(day, "start_time", e.target.value)}
+                          onChange={(e) =>
+                            updateTime(day, "start_time", e.target.value)
+                          }
                           className="hh-input"
                           style={{ width: 130, padding: "8px 12px" }}
                         />
-                        <span style={{ color: "var(--hh-text-muted)" }}>to</span>
+                        <span style={{ color: "var(--hh-text-muted)" }}>
+                          to
+                        </span>
                         <input
                           type="time"
                           value={schedule[day].end_time}
-                          onChange={(e) => updateTime(day, "end_time", e.target.value)}
+                          onChange={(e) =>
+                            updateTime(day, "end_time", e.target.value)
+                          }
                           className="hh-input"
                           style={{ width: 130, padding: "8px 12px" }}
                         />
                       </div>
                     ) : (
-                      <span style={{ fontSize: 14, color: "var(--hh-text-muted)" }}>Not available</span>
+                      <span
+                        style={{ fontSize: 14, color: "var(--hh-text-muted)" }}
+                      >
+                        Not available
+                      </span>
                     )}
                   </div>
                 ))}
@@ -301,10 +388,20 @@ export default function AvailabilityPage() {
           </div>
 
           {/* Tips */}
-          <div className="hh-card" style={{ padding: 20, backgroundColor: "rgba(234, 179, 8, 0.05)" }}>
-            <p style={{ margin: 0, fontSize: 13, color: "var(--hh-text-secondary)" }}>
-              <strong>💡 Tip:</strong> Clients will see your availability when browsing coaches. 
-              Keep your schedule up to date to receive relevant coaching requests.
+          <div
+            className="hh-card"
+            style={{ padding: 20, backgroundColor: "rgba(234, 179, 8, 0.05)" }}
+          >
+            <p
+              style={{
+                margin: 0,
+                fontSize: 13,
+                color: "var(--hh-text-secondary)",
+              }}
+            >
+              <strong>💡 Tip:</strong> Clients will see your availability when
+              browsing coaches. Keep your schedule up to date to receive
+              relevant coaching requests.
             </p>
           </div>
         </div>
