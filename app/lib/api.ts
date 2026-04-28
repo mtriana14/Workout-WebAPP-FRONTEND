@@ -101,10 +101,16 @@ async function apiRequest<T>(path: string, init: RequestInit = {}, token?: strin
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...init,
-    headers,
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...init,
+      headers,
+    });
+  } catch {
+    throw new Error(`Unable to reach the API at ${API_BASE_URL}. Make sure the backend server is running.`);
+  }
 
   const payload = (await response.json().catch(() => ({}))) as T & ApiErrorPayload;
 

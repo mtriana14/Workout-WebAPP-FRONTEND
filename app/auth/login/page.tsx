@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { Dumbbell, Eye, EyeOff, Lock, Mail } from "lucide-react";
 
-import { GoogleLogin } from "@react-oauth/google";
 import type { CredentialResponse } from "@react-oauth/google";
 
+import { GoogleAuthButton } from "@/app/components/GoogleAuthButton";
 import { getDashboardRouteForRole, googleSignInRequest, loginRequest, storeAuthSession } from "@/app/lib/api";
 import { ROLE_REDIRECTS } from "@/router/router";
 import { useAuthStore } from "@/store/authStore";
@@ -16,6 +16,7 @@ import type { AuthUser } from "@/types/auth";
 export default function LoginPage() {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -88,13 +89,21 @@ export default function LoginPage() {
           <h1 className="auth-heading__title">Welcome back</h1>
           <p className="auth-heading__sub">Sign in to continue your training journey.</p>
 
-          <GoogleLogin onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
+          {googleClientId ? (
+            <GoogleAuthButton
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              text="signin_with"
+            />
+          ) : null}
 
-          <div className="hh-divider" aria-hidden="true">
-            <div className="hh-divider__line" />
-            <span className="hh-divider__label">or sign in with email</span>
-            <div className="hh-divider__line" />
-          </div>
+          {googleClientId ? (
+            <div className="hh-divider" aria-hidden="true">
+              <div className="hh-divider__line" />
+              <span className="hh-divider__label">or sign in with email</span>
+              <div className="hh-divider__line" />
+            </div>
+          ) : null}
 
           <form className="hh-form" onSubmit={handleSubmit} noValidate>
             <div className="hh-field">
