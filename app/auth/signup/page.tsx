@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Dumbbell, User, Mail, Lock, Eye, EyeOff } from "lucide-react";
-import { GoogleLogin } from "@react-oauth/google";
 import type { CredentialResponse } from "@react-oauth/google";
 
+import { GoogleAuthButton } from "@/app/components/GoogleAuthButton";
 import {
   getDashboardRouteForRole,
   googleSignInRequest,
@@ -14,6 +14,7 @@ import {
 } from "@/app/lib/api";
 
 export default function CreateAccountPage() {
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -113,13 +114,21 @@ export default function CreateAccountPage() {
           <h1 className="auth-heading__title">Create your account</h1>
           <p className="auth-heading__sub">This will create a real user in the Flask backend and SQL database.</p>
 
-          <GoogleLogin onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
+          {googleClientId ? (
+            <GoogleAuthButton
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              text="continue_with"
+            />
+          ) : null}
 
-          <div className="hh-divider" aria-hidden="true">
-            <div className="hh-divider__line" />
-            <span className="hh-divider__label">or register with email</span>
-            <div className="hh-divider__line" />
-          </div>
+          {googleClientId ? (
+            <div className="hh-divider" aria-hidden="true">
+              <div className="hh-divider__line" />
+              <span className="hh-divider__label">or register with email</span>
+              <div className="hh-divider__line" />
+            </div>
+          ) : null}
 
           <form className="hh-form" onSubmit={handleSubmit} noValidate>
             <div className="hh-field-row">

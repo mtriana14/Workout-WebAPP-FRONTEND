@@ -21,7 +21,10 @@ export default function ClientRequestsPage() {
   const [error, setError] = useState("");
   const [filter, setFilter] = useState<string>("pending");
   const [actionLoading, setActionLoading] = useState<number | null>(null);
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
 
   const coachId = user?.id ?? user?.user_id;
 
@@ -50,7 +53,10 @@ export default function ClientRequestsPage() {
   };
 
   // Handle accept/decline (UC 9.4)
-  const handleRespond = async (requestId: number, action: "accepted" | "declined") => {
+  const handleRespond = async (
+    requestId: number,
+    action: "accepted" | "declined",
+  ) => {
     setActionLoading(requestId);
     try {
       console.log(requestId, action);
@@ -65,9 +71,8 @@ export default function ClientRequestsPage() {
   };
 
   // Filter requests
-  const filtered = filter === "all" 
-    ? requests 
-    : requests.filter((r) => r.status === filter);
+  const filtered =
+    filter === "all" ? requests : requests.filter((r) => r.status === filter);
 
   // Count by status
   const counts = {
@@ -88,7 +93,10 @@ export default function ClientRequestsPage() {
             right: 20,
             padding: "12px 20px",
             borderRadius: 8,
-            backgroundColor: toast.type === "success" ? "var(--hh-text-green)" : "var(--hh-error)",
+            backgroundColor:
+              toast.type === "success"
+                ? "var(--hh-text-green)"
+                : "var(--hh-error)",
             color: "white",
             fontSize: 14,
             fontWeight: 500,
@@ -118,7 +126,9 @@ export default function ClientRequestsPage() {
           <SignOutButton className="hh-sidebar__back hh-sidebar__logout hh-sidebar__logout-button">
             Sign Out
           </SignOutButton>
-          <a href="/" className="hh-sidebar__back">← Back to Home</a>
+          <a href="/" className="hh-sidebar__back">
+            ← Back to Home
+          </a>
         </div>
       </aside>
 
@@ -127,33 +137,77 @@ export default function ClientRequestsPage() {
         <div className="hh-dash-content">
           <div>
             <h1 className="hh-page-title">CLIENT REQUESTS</h1>
-            <p className="hh-page-subtitle">Review and respond to client coaching requests</p>
+            <p className="hh-page-subtitle">
+              Review and respond to client coaching requests
+            </p>
           </div>
 
           {/* Stats Cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(4, 1fr)",
+              gap: 16,
+            }}
+          >
             {[
-              { label: "Total", value: counts.all, color: "var(--hh-text-primary)", key: "all" },
-              { label: "Pending", value: counts.pending, color: "var(--hh-warning)", key: "pending" },
-              { label: "Accepted", value: counts.accepted, color: "var(--hh-text-green)", key: "accepted" },
-              { label: "Declined", value: counts.declined, color: "var(--hh-error)", key: "declined" },
+              {
+                label: "Total",
+                value: counts.all,
+                color: "var(--hh-text-primary)",
+                key: "all",
+              },
+              {
+                label: "Pending",
+                value: counts.pending,
+                color: "var(--hh-warning)",
+                key: "pending",
+              },
+              {
+                label: "Accepted",
+                value: counts.accepted,
+                color: "var(--hh-text-green)",
+                key: "accepted",
+              },
+              {
+                label: "Declined",
+                value: counts.declined,
+                color: "var(--hh-error)",
+                key: "declined",
+              },
             ].map((stat) => (
               <div
                 key={stat.label}
                 onClick={() => setFilter(stat.key)}
                 className="hh-card"
-                style={{ 
-                  padding: "20px", 
+                style={{
+                  padding: "20px",
                   textAlign: "center",
                   cursor: "pointer",
-                  border: filter === stat.key ? `2px solid ${stat.color}` : "2px solid transparent",
+                  border:
+                    filter === stat.key
+                      ? `2px solid ${stat.color}`
+                      : "2px solid transparent",
                   transition: "border-color 0.2s",
                 }}
               >
-                <p style={{ fontSize: 28, fontWeight: 700, color: stat.color, margin: 0 }}>
+                <p
+                  style={{
+                    fontSize: 28,
+                    fontWeight: 700,
+                    color: stat.color,
+                    margin: 0,
+                  }}
+                >
                   {stat.value}
                 </p>
-                <p style={{ fontSize: 12, color: "var(--hh-text-muted)", margin: "4px 0 0" }}>
+                <p
+                  style={{
+                    fontSize: 12,
+                    color: "var(--hh-text-muted)",
+                    margin: "4px 0 0",
+                  }}
+                >
                   {stat.label}
                 </p>
               </div>
@@ -162,19 +216,36 @@ export default function ClientRequestsPage() {
 
           {/* Requests List */}
           <div className="hh-card" style={{ padding: 0, overflow: "hidden" }}>
-            <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--hh-border)" }}>
+            <div
+              style={{
+                padding: "16px 20px",
+                borderBottom: "1px solid var(--hh-border)",
+              }}
+            >
               <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>
-                {filter === "all" ? "All Requests" : `${filter.charAt(0).toUpperCase() + filter.slice(1)} Requests`}
+                {filter === "all"
+                  ? "All Requests"
+                  : `${filter.charAt(0).toUpperCase() + filter.slice(1)} Requests`}
               </h3>
             </div>
 
             {loading && (
-              <p style={{ padding: 24, color: "var(--hh-text-muted)" }}>Loading requests...</p>
+              <p style={{ padding: 24, color: "var(--hh-text-muted)" }}>
+                Loading requests...
+              </p>
             )}
-            {error && <p style={{ padding: 24, color: "var(--hh-error)" }}>{error}</p>}
-            
+            {error && (
+              <p style={{ padding: 24, color: "var(--hh-error)" }}>{error}</p>
+            )}
+
             {!loading && !error && filtered.length === 0 && (
-              <p style={{ padding: 24, color: "var(--hh-text-muted)", textAlign: "center" }}>
+              <p
+                style={{
+                  padding: 24,
+                  color: "var(--hh-text-muted)",
+                  textAlign: "center",
+                }}
+              >
                 No {filter !== "all" ? filter : ""} requests found.
               </p>
             )}
@@ -199,7 +270,14 @@ export default function ClientRequestsPage() {
                     >
                       {/* Client Info */}
                       <div style={{ flex: 1 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 12,
+                            marginBottom: 8,
+                          }}
+                        >
                           <div
                             style={{
                               width: 40,
@@ -217,10 +295,22 @@ export default function ClientRequestsPage() {
                             {req.client_name?.charAt(0) || "C"}
                           </div>
                           <div>
-                            <p style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>
+                            <p
+                              style={{
+                                margin: 0,
+                                fontSize: 14,
+                                fontWeight: 600,
+                              }}
+                            >
                               {req.client_name || `Client #${req.client_id}`}
                             </p>
-                            <p style={{ margin: 0, fontSize: 12, color: "var(--hh-text-muted)" }}>
+                            <p
+                              style={{
+                                margin: 0,
+                                fontSize: 12,
+                                color: "var(--hh-text-muted)",
+                              }}
+                            >
                               {req.client_email || "No email"}
                             </p>
                           </div>
@@ -235,20 +325,44 @@ export default function ClientRequestsPage() {
                               marginTop: 12,
                             }}
                           >
-                            <p style={{ margin: 0, fontSize: 13, color: "var(--hh-text-secondary)", fontStyle: "italic" }}>
+                            <p
+                              style={{
+                                margin: 0,
+                                fontSize: 13,
+                                color: "var(--hh-text-secondary)",
+                                fontStyle: "italic",
+                              }}
+                            >
                               "{req.message}"
                             </p>
                           </div>
                         )}
 
-                        <p style={{ margin: "12px 0 0", fontSize: 12, color: "var(--hh-text-muted)" }}>
-                          Received: {new Date(req.created_at).toLocaleDateString()} at{" "}
-                          {new Date(req.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        <p
+                          style={{
+                            margin: "12px 0 0",
+                            fontSize: 12,
+                            color: "var(--hh-text-muted)",
+                          }}
+                        >
+                          Received:{" "}
+                          {new Date(req.created_at).toLocaleDateString()} at{" "}
+                          {new Date(req.created_at).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                         </p>
                       </div>
 
                       {/* Status & Actions */}
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 12 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "flex-end",
+                          gap: 12,
+                        }}
+                      >
                         <span
                           style={{
                             display: "inline-block",
@@ -266,7 +380,9 @@ export default function ClientRequestsPage() {
                         {req.status === "pending" && (
                           <div style={{ display: "flex", gap: 8 }}>
                             <button
-                              onClick={() => handleRespond(req.request_id, "accepted")}
+                              onClick={() =>
+                                handleRespond(req.request_id, "accepted")
+                              }
                               disabled={isLoading}
                               style={{
                                 padding: "8px 16px",
@@ -283,7 +399,9 @@ export default function ClientRequestsPage() {
                               {isLoading ? "..." : "Accept"}
                             </button>
                             <button
-                              onClick={() => handleRespond(req.request_id, "declined")}
+                              onClick={() =>
+                                handleRespond(req.request_id, "declined")
+                              }
                               disabled={isLoading}
                               style={{
                                 padding: "8px 16px",
@@ -303,8 +421,15 @@ export default function ClientRequestsPage() {
                         )}
 
                         {req.responded_at && (
-                          <p style={{ margin: 0, fontSize: 11, color: "var(--hh-text-muted)" }}>
-                            Responded: {new Date(req.responded_at).toLocaleDateString()}
+                          <p
+                            style={{
+                              margin: 0,
+                              fontSize: 11,
+                              color: "var(--hh-text-muted)",
+                            }}
+                          >
+                            Responded:{" "}
+                            {new Date(req.responded_at).toLocaleDateString()}
                           </p>
                         )}
                       </div>

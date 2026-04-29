@@ -5,7 +5,10 @@ import { useEffect, useMemo, useState } from "react";
 import NavComponent from "@/components/NavComponent";
 import { SignOutButton } from "@/app/components/signOutButton";
 import { NAV_ITEMS_COACH } from "@/router/router";
-import { clientRequestService, type ClientRequest } from "@/services/ClientRequest";
+import {
+  clientRequestService,
+  type ClientRequest,
+} from "@/services/ClientRequest";
 import { useAuthStore } from "@/store/authStore";
 import { Dumbbell } from "lucide-react";
 
@@ -26,7 +29,9 @@ export default function CoachClientsPage() {
     const loadClients = async () => {
       try {
         const response = await clientRequestService.getAll(coachId);
-        const acceptedClients = (response.requests ?? []).filter((request) => request.status === "accepted");
+        const acceptedClients = (response.requests ?? []).filter(
+          (request) => request.status === "accepted",
+        );
         setClients(acceptedClients);
       } catch {
         setError("Failed to load clients.");
@@ -45,7 +50,9 @@ export default function CoachClientsPage() {
     }
 
     return clients.filter((client) =>
-      `${client.client_name ?? ""} ${client.client_email ?? ""}`.toLowerCase().includes(query),
+      `${client.client_name ?? ""} ${client.client_email ?? ""}`
+        .toLowerCase()
+        .includes(query),
     );
   }, [clients, search]);
 
@@ -78,7 +85,9 @@ export default function CoachClientsPage() {
         <div className="hh-dash-content">
           <div>
             <h1 className="hh-page-title">MY CLIENTS</h1>
-            <p className="hh-page-subtitle">Manage your active coaching clients.</p>
+            <p className="hh-page-subtitle">
+              Manage your active coaching clients.
+            </p>
           </div>
 
           <div className="hh-card">
@@ -93,31 +102,70 @@ export default function CoachClientsPage() {
           </div>
 
           <div className="hh-card" style={{ padding: 0, overflow: "hidden" }}>
-            <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--hh-border)" }}>
+            <div
+              style={{
+                padding: "16px 20px",
+                borderBottom: "1px solid var(--hh-border)",
+              }}
+            >
               <h2 className="hh-panel-heading">Active Clients</h2>
             </div>
 
-            {loading ? <p style={{ padding: 24, color: "var(--hh-text-muted)" }}>Loading clients...</p> : null}
-            {error ? <p style={{ padding: 24, color: "var(--hh-error)" }}>{error}</p> : null}
+            {loading ? (
+              <p style={{ padding: 24, color: "var(--hh-text-muted)" }}>
+                Loading clients...
+              </p>
+            ) : null}
+            {error ? (
+              <p style={{ padding: 24, color: "var(--hh-error)" }}>{error}</p>
+            ) : null}
 
             {!loading && !error && filteredClients.length === 0 ? (
               <p style={{ padding: 24, color: "var(--hh-text-muted)" }}>
-                {clients.length === 0 ? "No active clients yet." : "No clients match your search."}
+                {clients.length === 0
+                  ? "No active clients yet."
+                  : "No clients match your search."}
               </p>
             ) : null}
 
             {!loading && !error && filteredClients.length > 0 ? (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 1, backgroundColor: "var(--hh-border)" }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+                  gap: 1,
+                  backgroundColor: "var(--hh-border)",
+                }}
+              >
                 {filteredClients.map((client) => (
-                  <div key={client.request_id} style={{ padding: 20, backgroundColor: "var(--hh-bg-primary)" }}>
+                  <div
+                    key={client.request_id}
+                    style={{
+                      padding: 20,
+                      backgroundColor: "var(--hh-bg-primary)",
+                    }}
+                  >
                     <p style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>
                       {client.client_name ?? `Client #${client.client_id}`}
                     </p>
-                    <p style={{ margin: "4px 0 0", fontSize: 13, color: "var(--hh-text-muted)" }}>
+                    <p
+                      style={{
+                        margin: "4px 0 0",
+                        fontSize: 13,
+                        color: "var(--hh-text-muted)",
+                      }}
+                    >
                       {client.client_email ?? "No email provided"}
                     </p>
-                    <p style={{ margin: "12px 0 0", fontSize: 12, color: "var(--hh-text-muted)" }}>
-                      Client since {new Date(client.created_at).toLocaleDateString()}
+                    <p
+                      style={{
+                        margin: "12px 0 0",
+                        fontSize: 12,
+                        color: "var(--hh-text-muted)",
+                      }}
+                    >
+                      Client since{" "}
+                      {new Date(client.created_at).toLocaleDateString()}
                     </p>
                   </div>
                 ))}
