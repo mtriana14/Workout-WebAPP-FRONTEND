@@ -7,8 +7,7 @@ import { SignOutButton } from "@/app/components/signOutButton";
 import { NAV_ITEMS_COACH } from "@/router/router";
 import { clientRequestService, type ClientRequest } from "@/services/ClientRequest";
 import { useAuthStore } from "@/store/authStore";
-
-const LOGO_ICON = "https://www.figma.com/api/mcp/asset/b62d16c1-9ace-4db9-ac52-c4c34a9bdd3e";
+import { Dumbbell } from "lucide-react";
 
 export default function CoachClientsPage() {
   const user = useAuthStore((state) => state.user);
@@ -56,11 +55,11 @@ export default function CoachClientsPage() {
         <div className="hh-sidebar__header">
           <a href="/" className="hh-logo">
             <div className="hh-logo__icon hh-logo__icon--md">
-              <img src={LOGO_ICON} alt="" width={16} height={16} />
+              <Dumbbell size={16} color="white" />
             </div>
             <span className="hh-logo__text hh-logo__text--md">HeraHealth</span>
           </a>
-          <span className="hh-badge hh-badge--sm">Coach Portal</span>
+          <span className="hh-badge hh-badge--sm">Client Portal</span>
         </div>
 
         <NavComponent NAV_ITEMS={NAV_ITEMS_COACH} />
