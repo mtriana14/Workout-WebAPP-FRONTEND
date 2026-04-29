@@ -8,25 +8,10 @@ import { ClientRequest, clientRequestService } from "@/services/ClientRequest";
 import { NAV_ITEMS_COACH } from "@/router/router";
 import { Dumbbell } from "lucide-react";
 
-const STATUS_STYLES: Record<
-  string,
-  { bg: string; color: string; label: string }
-> = {
-  pending: {
-    bg: "rgba(234, 179, 8, 0.1)",
-    color: "var(--hh-warning)",
-    label: "Pending",
-  },
-  accepted: {
-    bg: "rgba(34, 197, 94, 0.1)",
-    color: "var(--hh-text-green)",
-    label: "Accepted",
-  },
-  declined: {
-    bg: "rgba(239, 68, 68, 0.1)",
-    color: "var(--hh-error)",
-    label: "Declined",
-  },
+const STATUS_STYLES: Record<string, { bg: string; color: string; label: string }> = {
+  pending:  { bg: "rgba(234, 179, 8, 0.1)",  color: "var(--hh-warning)",    label: "Pending" },
+  accepted: { bg: "rgba(34, 197, 94, 0.1)",  color: "var(--hh-text-green)", label: "Accepted" },
+  declined: { bg: "rgba(239, 68, 68, 0.1)",  color: "var(--hh-error)",      label: "Declined" },
 };
 
 export default function ClientRequestsPage() {
@@ -132,7 +117,7 @@ export default function ClientRequestsPage() {
             </div>
             <span className="hh-logo__text hh-logo__text--md">HeraHealth</span>
           </a>
-          <span className="hh-badge hh-badge--sm">Coach Portal</span>
+          <span className="hh-badge hh-badge--sm">Client Portal</span>
         </div>
 
         <NavComponent NAV_ITEMS={NAV_ITEMS_COACH} />

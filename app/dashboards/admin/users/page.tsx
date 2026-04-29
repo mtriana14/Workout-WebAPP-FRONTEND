@@ -6,24 +6,7 @@ import { NAV_ITEMS_ADMIN } from "@/router/router";
 import { userService } from "@/services/userService";
 import { UserItem } from "@/types/UserItem";
 import { useEffect, useState } from "react";
-
-// ─── Figma Asset URLs ─────────────────────────────────────────────────────────
-const LOGO_ICON =
-  "https://www.figma.com/api/mcp/asset/b62d16c1-9ace-4db9-ac52-c4c34a9bdd3e";
-const NAV_DASHBOARD =
-  "https://www.figma.com/api/mcp/asset/4a444b5a-55d6-47fd-90bc-2a0c522b40b4";
-const NAV_USERS =
-  "https://www.figma.com/api/mcp/asset/c8b2bcee-a404-442c-ba16-e64f05751f1c";
-const NAV_COACHES =
-  "https://www.figma.com/api/mcp/asset/90ad0f31-6602-4207-983a-74694eab3e30";
-const NAV_EXERCISE =
-  "https://www.figma.com/api/mcp/asset/66986bb5-e372-40a1-8ae8-510ada58004f";
-const NAV_PAYMENT =
-  "https://www.figma.com/api/mcp/asset/1f6854ee-fd37-467a-a9cf-f702637b4972";
-const NAV_NOTIF =
-  "https://www.figma.com/api/mcp/asset/6f6a281c-bc69-4c6f-aa8c-8be330657de2";
-
- 
+import { Dumbbell } from "lucide-react";
 
 const ROLE_COLORS: Record<string, string> = {
   admin: "hh-badge hh-badge--admin",
@@ -47,10 +30,10 @@ export default function UsersPage() {
       setLoading(false);
     }
   };
+  
   useEffect(() => {
       loadUsers();
       console.log(users);
-       
   }, []);
 
   const filtered = users.filter((u) =>
@@ -66,7 +49,7 @@ export default function UsersPage() {
         <div className="hh-sidebar__header">
           <a href="/" className="hh-logo">
             <div className="hh-logo__icon hh-logo__icon--md">
-              <img src={LOGO_ICON} alt="" width={16} height={16} />
+              <Dumbbell size={16} color="white" />
             </div>
             <span className="hh-logo__text hh-logo__text--md">HeraHealth</span>
           </a>
