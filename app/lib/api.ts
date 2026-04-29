@@ -32,6 +32,10 @@ function isBrowser() {
   return typeof window !== "undefined";
 }
 
+function buildApiUrl(path: string) {
+  return `${API_BASE_URL.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
+}
+
 function readJsonStorage<T>(key: string): T | null {
   if (!isBrowser()) {
     return null;
@@ -104,7 +108,7 @@ async function apiRequest<T>(path: string, init: RequestInit = {}, token?: strin
   let response: Response;
 
   try {
-    response = await fetch(`${API_BASE_URL}${path}`, {
+    response = await fetch(buildApiUrl(path), {
       ...init,
       headers,
     });

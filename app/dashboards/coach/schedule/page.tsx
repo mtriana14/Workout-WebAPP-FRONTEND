@@ -1,36 +1,69 @@
 "use client";
 
-import { Dumbbell, Plus } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Calendar, Dumbbell, Plus } from "lucide-react";
+
 import NavComponent from "@/components/NavComponent";
 import { SignOutButton } from "@/app/components/signOutButton";
 import { NAV_ITEMS_COACH } from "@/router/router";
+import { availabilityService, type AvailabilitySlot } from "@/services/availabilityService";
+import { clientRequestService, type ClientRequest } from "@/services/ClientRequest";
+import { useAuthStore } from "@/store/authStore";
 
-const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const HOURS = Array.from({ length: 10 }, (_, i) => {
-  const hour = i + 8;
-  return `${hour}:00 ${hour < 12 ? "AM" : "PM"}`;
-});
+const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] as const;
 
-const BOOKED = [
-  { day: "Mon", hour: 1, client: "Alex M."   },
-  { day: "Wed", hour: 3, client: "Sam C."    },
-  { day: "Fri", hour: 2, client: "Taylor K." },
-];
-
-const AVAILABLE = [
-  { day: "Mon", hour: 0 },
-  { day: "Mon", hour: 2 },
-  { day: "Tue", hour: 1 },
-  { day: "Thu", hour: 0 },
-  { day: "Thu", hour: 2 },
-  { day: "Sat", hour: 0 },
-];
+function formatTime(time: string) {
+  const [hourPart, minutePart = "00"] = time.split(":");
+  const hour = Number(hourPart);
+  const period = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour % 12 || 12;
+  return `${displayHour}:${minutePart.slice(0, 2)} ${period}`;
+}
 
 export default function CoachSchedule() {
+  const { user } = useAuthStore();
+  const userId = user?.id ?? user?.user_id;
+  const [availability, setAvailability] = useState<AvailabilitySlot[]>([]);
+  const [requests, setRequests] = useState<ClientRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
+
+    const loadSchedule = async () => {
+      try {
+        setLoading(true);
+        const [availabilityResponse, requestResponse] = await Promise.all([
+          availabilityService.get(userId),
+          clientRequestService.getAll(userId),
+        ]);
+        setAvailability(availabilityResponse.availability);
+        setRequests(requestResponse.requests);
+      } catch (caughtError) {
+        setError(caughtError instanceof Error ? caughtError.message : "Unable to load schedule.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadSchedule();
+  }, [userId]);
+
+  const acceptedRequests = requests.filter((request) => request.status === "accepted");
+  const events = useMemo(() => {
+    return DAYS.map((day) => ({
+      day,
+      slots: availability.filter((slot) => slot.day_of_week === day && slot.is_available),
+      booked: acceptedRequests.filter((_, index) => index % DAYS.length === DAYS.indexOf(day)),
+    }));
+  }, [acceptedRequests, availability]);
+
   return (
     <div className="hh-dash-root">
-
-      {/* SIDEBAR */}
       <aside className="hh-sidebar">
         <div className="hh-sidebar__header">
           <a href="/" className="hh-logo">
@@ -52,100 +85,58 @@ export default function CoachSchedule() {
         </div>
       </aside>
 
-      {/* MAIN */}
       <main className="hh-dash-main">
         <div className="hh-dash-content">
-
-          {/* Header */}
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
             <div>
-              <h1 className="hh-page-title">SCHEDULE</h1>
-              <p className="hh-page-subtitle">Set availability and view booked sessions</p>
+              <h1 className="hh-page-title">WEEKLY CALENDAR</h1>
+              <p className="hh-page-subtitle">Availability and accepted client sessions from the API</p>
             </div>
-            <button
-              className="btn btn--primary"
-              style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}
-            >
-              <Plus size={14} /> Add Availability
-            </button>
+            <a className="btn btn--primary" href="/dashboards/coach/availability" style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
+              <Plus size={14} /> Edit Availability
+            </a>
           </div>
 
-          {/* Calendar grid */}
-          <div className="hh-card" style={{ overflowX: "auto" }}>
-            <div style={{ minWidth: 600 }}>
+          {error ? <p className="hh-error-msg">{error}</p> : null}
 
-              {/* Header row */}
-              <div style={{ display: "grid", gridTemplateColumns: "80px repeat(6, 1fr)", gap: 4, marginBottom: 8 }}>
-                <div style={{ fontSize: "var(--hh-fs-12)", color: "var(--hh-text-muted)", padding: 8 }}>Time</div>
-                {DAYS.map((d) => (
-                  <div key={d} style={{ fontSize: "var(--hh-fs-12)", fontWeight: 600, textAlign: "center", padding: 8, color: "var(--hh-text-primary)" }}>
-                    {d}
-                  </div>
+          <div className="hh-card">
+            {loading ? (
+              <p className="hh-text-muted">Loading weekly calendar...</p>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(140px, 1fr))", gap: 12, overflowX: "auto" }}>
+                {events.map((column) => (
+                  <section key={column.day} style={{ minHeight: 360, padding: 12, border: "1px solid var(--hh-border)", borderRadius: "var(--hh-radius-md)", background: "var(--hh-bg-card-dark)" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                      <Calendar size={14} color="var(--hh-accent)" />
+                      <h2 style={{ margin: 0, fontSize: 14, color: "var(--hh-text-primary)" }}>{column.day.slice(0, 3)}</h2>
+                    </div>
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      {column.slots.map((slot) => (
+                        <div key={slot.availability_id ?? `${slot.day_of_week}-${slot.start_time}`} style={{ padding: 10, borderRadius: 10, background: "rgba(74, 222, 128, 0.08)", border: "1px solid rgba(74, 222, 128, 0.24)", color: "#4ade80", fontSize: 12 }}>
+                          Open
+                          <div style={{ color: "var(--hh-text-muted)", marginTop: 4 }}>
+                            {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
+                          </div>
+                        </div>
+                      ))}
+
+                      {column.booked.map((request) => (
+                        <div key={request.request_id} style={{ padding: 10, borderRadius: 10, background: "var(--hh-accent-15)", border: "1px solid var(--hh-accent-30)", color: "var(--hh-accent-light)", fontSize: 12 }}>
+                          {request.client_name ?? "Client Session"}
+                          <div style={{ color: "var(--hh-text-muted)", marginTop: 4 }}>Accepted coaching client</div>
+                        </div>
+                      ))}
+
+                      {column.slots.length === 0 && column.booked.length === 0 ? (
+                        <p style={{ margin: 0, color: "var(--hh-text-muted)", fontSize: 12 }}>No availability</p>
+                      ) : null}
+                    </div>
+                  </section>
                 ))}
               </div>
-
-              {/* Time rows */}
-              {HOURS.map((hour, hi) => (
-                <div key={hi} style={{ display: "grid", gridTemplateColumns: "80px repeat(6, 1fr)", gap: 4, marginBottom: 4 }}>
-                  <div style={{ fontSize: "var(--hh-fs-12)", color: "var(--hh-text-muted)", padding: 8, display: "flex", alignItems: "center" }}>
-                    {hour}
-                  </div>
-                  {DAYS.map((day) => {
-                    const isBooked  = BOOKED.find((b) => b.day === day && b.hour === hi);
-                    const isAvail   = AVAILABLE.find((a) => a.day === day && a.hour === hi);
-
-                    let bg      = "var(--hh-bg-card-dark)";
-                    let color   = "transparent";
-                    let border  = "1px solid transparent";
-                    let label   = null;
-
-                    if (isBooked) {
-                      bg      = "var(--hh-accent-15)";
-                      color   = "var(--hh-accent-light)";
-                      border  = "1px solid var(--hh-accent-30)";
-                      label   = isBooked.client;
-                    } else if (isAvail) {
-                      bg      = "rgba(74, 222, 128, 0.08)";
-                      color   = "#4ade80";
-                      border  = "1px solid rgba(74, 222, 128, 0.2)";
-                      label   = "Open";
-                    }
-
-                    return (
-                      <div
-                        key={day}
-                        style={{
-                          height: 40, borderRadius: "var(--hh-radius-sm)",
-                          background: bg, border,
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          fontSize: "var(--hh-fs-10)", color, fontWeight: 500,
-                          cursor: "pointer", transition: "opacity 0.15s",
-                        }}
-                        onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.8"; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; }}
-                      >
-                        {label}
-                      </div>
-                    );
-                  })}
-                </div>
-              ))}
-
-            </div>
-
-            {/* Legend */}
-            <div style={{ display: "flex", gap: 24, marginTop: 16, fontSize: "var(--hh-fs-12)", color: "var(--hh-text-muted)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <div style={{ width: 12, height: 12, borderRadius: 4, background: "var(--hh-accent-15)", border: "1px solid var(--hh-accent-30)" }} />
-                Booked
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <div style={{ width: 12, height: 12, borderRadius: 4, background: "rgba(74, 222, 128, 0.08)", border: "1px solid rgba(74, 222, 128, 0.2)" }} />
-                Available
-              </div>
-            </div>
+            )}
           </div>
-
         </div>
       </main>
     </div>

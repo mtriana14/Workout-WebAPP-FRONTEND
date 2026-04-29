@@ -2,22 +2,26 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { 
-  Dumbbell, 
-  LayoutDashboard, 
-  User, 
-  Target, 
-  Settings, 
-  Activity,
-  Search,
-  MessageSquare,
-  CreditCard,
-  Apple
-} from "lucide-react";
+import { Dumbbell } from "lucide-react";
 
+import { SignOutButton } from "@/app/components/signOutButton";
 import { useMemberPortal } from "@/app/lib/memberPortal";
+import NavComponent from "@/components/NavComponent";
+import { NAV_ITEMS_CLIENT } from "@/router/router";
 
-type ActivePage = "dashboard" | "profile" | "coaches" | "settings" | "activity" | "chat" | "billing" | "nutrition";
+type ActivePage =
+  | "dashboard"
+  | "profile"
+  | "coaches"
+  | "settings"
+  | "activity"
+  | "chat"
+  | "billing"
+  | "nutrition"
+  | "calendar"
+  | "progressPhotos"
+  | "invoices"
+  | "reviews";
 
 interface MemberPortalShellProps {
   activePage: ActivePage;
@@ -27,32 +31,20 @@ interface MemberPortalShellProps {
   headerActions?: ReactNode;
 }
 
-const NAV_ITEMS = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboards/user" },
-  { id: "coaches", label: "Find Coaches", icon: Search, href: "/coaches" },
-  { id: "chat", label: "Messages", icon: MessageSquare, href: "/chat" },
-  { id: "profile", label: "Profile", icon: User, href: "/profile" },
-  { id: "nutrition", label: "Nutrition", icon: Apple, href: "/nutrition" },
-  { id: "goals", label: "Goals", icon: Target, href: "/dashboards/user#goals" },
-  { id: "settings", label: "Preferences", icon: Settings, href: "/settings" },
-  { id: "activity", label: "Activity", icon: Activity, href: "/activity" },
-  { id: "billing", label: "Billing", icon: CreditCard, href: "/billing" },
-] as const;
-
 const MOBILE_LINKS = [
-  { label: "Dashboard", href: "/dashboards/user" },
-  { label: "Profile", href: "/profile" },
-  { label: "Goals", href: "/dashboards/user#goals" },
+  { label: "Dashboard", href: "/dashboards/client" },
+  { label: "Progress Photos", href: "/dashboards/client/progress/photos" },
+  { label: "Invoices", href: "/my-invoices" },
 ];
 
 export function MemberPortalShell({
-  activePage,
+  activePage: _activePage,
   title,
   subtitle,
   children,
   headerActions,
 }: MemberPortalShellProps) {
-  const { displayName, initials, isAuthenticated, isLoading, logout, profile } = useMemberPortal();
+  const { displayName, isAuthenticated, isLoading, profile } = useMemberPortal();
 
   if (isLoading) {
     return (
@@ -104,40 +96,15 @@ export function MemberPortalShell({
             </div>
             <span className="hh-logo__text hh-logo__text--md">HeraHealth</span>
           </Link>
-          <span className="hh-badge hh-badge--sm">{profile.membership}</span>
+          <span className="hh-badge hh-badge--sm">Client Portal</span>
         </div>
 
-        <nav className="hh-sidebar__nav" aria-label="User navigation">
-          {NAV_ITEMS.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className={`hh-nav-link${
-                item.id === activePage ? " hh-nav-link--active" : ""
-              }`}
-              aria-current={item.id === activePage ? "page" : undefined}
-            >
-              <item.icon size={16} style={{ flexShrink: 0, marginRight: 8 }} />
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="hh-portal-profile-strip">
-          <div className="hh-portal-avatar">{initials}</div>
-          <div className="hh-portal-profile-meta">
-            <p className="hh-portal-profile-name">{displayName}</p>
-            <p className="hh-portal-profile-email">{profile.email}</p>
-          </div>
-          <Link href="/profile" className="hh-portal-profile-link">
-            Edit
-          </Link>
-        </div>
+        <NavComponent NAV_ITEMS={NAV_ITEMS_CLIENT} />
 
         <div className="hh-sidebar__footer">
-          <button type="button" className="hh-sidebar__back hh-sidebar__logout" onClick={logout}>
-            Log Out
-          </button>
+          <SignOutButton className="hh-sidebar__back hh-sidebar__logout hh-sidebar__logout-button">
+            Sign Out
+          </SignOutButton>
           <Link href="/" className="hh-sidebar__back">
             ← Back to Home
           </Link>
@@ -148,11 +115,11 @@ export function MemberPortalShell({
         <div className="hh-portal-mobilebar">
           <div className="hh-portal-mobilebar__top">
             <div>
-              <p className="hh-portal-mobilebar__label">{profile.membership}</p>
+              <p className="hh-portal-mobilebar__label">Client Portal</p>
               <p className="hh-portal-mobilebar__name">{displayName}</p>
             </div>
-            <Link href="/profile" className="hh-portal-inline-link">
-              Edit Profile
+            <Link href="/dashboards/user/profile" className="hh-portal-inline-link">
+              Edit Photo
             </Link>
           </div>
           <div className="hh-portal-mobilebar__links">
@@ -167,7 +134,6 @@ export function MemberPortalShell({
         <div className="hh-dash-content">
           <div className="hh-portal-header">
             <div>
-              <p className="hh-portal-header__eyebrow">{profile.goal}</p>
               <h1 className="hh-page-title">{title}</h1>
               <p className="hh-page-subtitle">{subtitle}</p>
             </div>

@@ -1,34 +1,97 @@
 "use client";
 
-import { useState } from "react";
-import { X, Dumbbell } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Dumbbell } from "lucide-react";
+
 import NavComponent from "@/components/NavComponent";
 import { SignOutButton } from "@/app/components/signOutButton";
 import { NAV_ITEMS_COACH } from "@/router/router";
+import { profileService } from "@/services/profileService";
+import { useAuthStore } from "@/store/authStore";
 
 const NOTIFICATIONS = [
-  { label: "New client requests",   sub: "Get notified when a user sends you a request",  defaultOn: true  },
-  { label: "Client messages",       sub: "Notifications for new client messages",          defaultOn: true  },
-  { label: "Workout completions",   sub: "When a client completes an assigned workout",    defaultOn: true  },
-  { label: "Weekly summary",        sub: "Weekly recap of your clients' activity",         defaultOn: false },
+  { key: "requests", label: "New client requests", sub: "Get notified when a user sends you a request", defaultOn: true },
+  { key: "messages", label: "Client messages", sub: "Notifications for new client messages", defaultOn: true },
+  { key: "workouts", label: "Workout completions", sub: "When a client completes an assigned workout", defaultOn: true },
+  { key: "summary", label: "Weekly summary", sub: "Weekly recap of your clients' activity", defaultOn: false },
 ];
 
 export default function CoachSettings() {
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [notifications, setNotifications] = useState(
-    NOTIFICATIONS.map((n) => n.defaultOn)
-  );
+  const { user } = useAuthStore();
+  const userId = user?.id ?? user?.user_id;
+  const [profile, setProfile] = useState({ first_name: "", last_name: "", email: "", phone: "" });
+  const [passwords, setPasswords] = useState({ current_password: "", new_password: "", confirm_password: "" });
+  const [notifications, setNotifications] = useState(NOTIFICATIONS.map((item) => item.defaultOn));
+  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
-  const toggleNotification = (index: number) => {
-    setNotifications((prev) =>
-      prev.map((val, i) => (i === index ? !val : val))
-    );
+  useEffect(() => {
+    if (!userId) {
+      return;
+    }
+
+    const loadProfile = async () => {
+      try {
+        const response = await profileService.getUser(userId);
+        setProfile({
+          first_name: response.user.first_name ?? "",
+          last_name: response.user.last_name ?? "",
+          email: response.user.email ?? "",
+          phone: response.user.phone ?? "",
+        });
+      } catch (error) {
+        setStatus({ type: "error", message: error instanceof Error ? error.message : "Unable to load account settings." });
+      }
+    };
+
+    void loadProfile();
+  }, [userId]);
+
+  const saveProfile = async () => {
+    if (!userId) {
+      setStatus({ type: "error", message: "Sign in before saving settings." });
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const response = await profileService.updateUser(userId, profile);
+      setStatus({ type: "success", message: response.message });
+    } catch (error) {
+      setStatus({ type: "error", message: error instanceof Error ? error.message : "Unable to save settings." });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updatePassword = async () => {
+    if (!userId) {
+      setStatus({ type: "error", message: "Sign in before changing your password." });
+      return;
+    }
+
+    if (passwords.new_password !== passwords.confirm_password) {
+      setStatus({ type: "error", message: "New password and confirmation do not match." });
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const response = await profileService.updatePassword({
+        current_password: passwords.current_password,
+        new_password: passwords.new_password,
+      });
+      setPasswords({ current_password: "", new_password: "", confirm_password: "" });
+      setStatus({ type: "success", message: response.Success ?? "Password updated." });
+    } catch (error) {
+      setStatus({ type: "error", message: error instanceof Error ? error.message : "Unable to update password." });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <div className="hh-dash-root">
-
-      {/* SIDEBAR */}
       <aside className="hh-sidebar">
         <div className="hh-sidebar__header">
           <a href="/" className="hh-logo">
@@ -50,207 +113,83 @@ export default function CoachSettings() {
         </div>
       </aside>
 
-      {/* MAIN */}
       <main className="hh-dash-main">
         <div className="hh-dash-content" style={{ maxWidth: 720 }}>
-
-          {/* Header */}
           <div>
             <h1 className="hh-page-title">SETTINGS</h1>
             <p className="hh-page-subtitle">Manage your account and preferences</p>
           </div>
 
-          {/* Profile */}
-          <div className="hh-card">
-            <h3 className="hh-panel-heading">Profile</h3>
-            <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 24 }}>
-              <div style={{
-                width: 64, height: 64, borderRadius: "50%",
-                background: "var(--hh-bg-card-dark)",
-                border: "2px solid var(--hh-border)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                flexShrink: 0,
-              }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="var(--hh-text-muted)" strokeWidth="1.5" style={{ width: 32, height: 32 }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                </svg>
-              </div>
-              <div>
-                <button className="btn btn--ghost" style={{ border: "1px solid var(--hh-border)", fontSize: "var(--hh-fs-12)" }}>
-                  Upload Photo
-                </button>
-                <p style={{ fontSize: "var(--hh-fs-12)", color: "var(--hh-text-muted)", marginTop: 4 }}>
-                  JPG, PNG up to 5MB
-                </p>
-              </div>
-            </div>
+          {status ? <p className={status.type === "error" ? "hh-error-msg" : "hh-text-green"}>{status.message}</p> : null}
 
+          <div className="hh-card">
+            <h3 className="hh-panel-heading">Account</h3>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 12 }}>
               <div className="hh-field">
                 <label className="hh-field__label">First Name</label>
-                <div className="hh-input-wrap">
-                  <input type="text" className="hh-input hh-input--no-icon-left hh-input--no-icon-right" defaultValue="Jordan" />
-                </div>
+                <input className="hh-input hh-input--no-icon-left hh-input--no-icon-right" value={profile.first_name} onChange={(event) => setProfile((current) => ({ ...current, first_name: event.target.value }))} />
               </div>
               <div className="hh-field">
                 <label className="hh-field__label">Last Name</label>
-                <div className="hh-input-wrap">
-                  <input type="text" className="hh-input hh-input--no-icon-left hh-input--no-icon-right" defaultValue="Rivera" />
-                </div>
+                <input className="hh-input hh-input--no-icon-left hh-input--no-icon-right" value={profile.last_name} onChange={(event) => setProfile((current) => ({ ...current, last_name: event.target.value }))} />
               </div>
             </div>
-
             <div className="hh-field" style={{ marginBottom: 12 }}>
               <label className="hh-field__label">Email</label>
-              <div className="hh-input-wrap">
-                <input type="email" className="hh-input hh-input--no-icon-left hh-input--no-icon-right" defaultValue="jordan@herahealth.com" />
-              </div>
+              <input type="email" className="hh-input hh-input--no-icon-left hh-input--no-icon-right" value={profile.email} onChange={(event) => setProfile((current) => ({ ...current, email: event.target.value }))} />
             </div>
-
             <div className="hh-field" style={{ marginBottom: 16 }}>
-              <label className="hh-field__label">Specialty</label>
-              <div className="hh-input-wrap">
-                <input type="text" className="hh-input hh-input--no-icon-left hh-input--no-icon-right" defaultValue="Strength & Conditioning" />
-              </div>
+              <label className="hh-field__label">Phone</label>
+              <input className="hh-input hh-input--no-icon-left hh-input--no-icon-right" value={profile.phone} onChange={(event) => setProfile((current) => ({ ...current, phone: event.target.value }))} />
             </div>
-
-            <button className="btn btn--primary">Save Changes</button>
+            <button className="btn btn--primary" onClick={saveProfile} disabled={saving}>
+              {saving ? "Saving..." : "Save Changes"}
+            </button>
           </div>
 
-          {/* Security */}
           <div className="hh-card">
             <h3 className="hh-panel-heading">Security</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <div className="hh-field">
-                <label className="hh-field__label">Current Password</label>
-                <div className="hh-input-wrap">
-                  <input type="password" className="hh-input hh-input--no-icon-left hh-input--no-icon-right" placeholder="••••••••" />
+              {[
+                ["current_password", "Current Password"],
+                ["new_password", "New Password"],
+                ["confirm_password", "Confirm New Password"],
+              ].map(([key, label]) => (
+                <div className="hh-field" key={key}>
+                  <label className="hh-field__label">{label}</label>
+                  <input
+                    type="password"
+                    className="hh-input hh-input--no-icon-left hh-input--no-icon-right"
+                    value={passwords[key as keyof typeof passwords]}
+                    onChange={(event) => setPasswords((current) => ({ ...current, [key]: event.target.value }))}
+                  />
                 </div>
-              </div>
-              <div className="hh-field">
-                <label className="hh-field__label">New Password</label>
-                <div className="hh-input-wrap">
-                  <input type="password" className="hh-input hh-input--no-icon-left hh-input--no-icon-right" placeholder="••••••••" />
-                </div>
-              </div>
-              <div className="hh-field">
-                <label className="hh-field__label">Confirm New Password</label>
-                <div className="hh-input-wrap">
-                  <input type="password" className="hh-input hh-input--no-icon-left hh-input--no-icon-right" placeholder="••••••••" />
-                </div>
-              </div>
+              ))}
             </div>
-            <button className="btn btn--ghost" style={{ border: "1px solid var(--hh-border)", marginTop: 16 }}>
+            <button className="btn btn--ghost" onClick={updatePassword} disabled={saving} style={{ border: "1px solid var(--hh-border)", marginTop: 16 }}>
               Update Password
             </button>
           </div>
 
-          {/* Notifications */}
           <div className="hh-card">
             <h3 className="hh-panel-heading">Notifications</h3>
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              {NOTIFICATIONS.map((n, i) => (
-                <div
-                  key={i}
-                  style={{
-                    display: "flex", alignItems: "center", justifyContent: "space-between",
-                    padding: "12px 0",
-                    borderBottom: i < NOTIFICATIONS.length - 1 ? "0.6px solid var(--hh-border-50)" : "none",
-                  }}
-                >
-                  <div>
-                    <div style={{ fontSize: "var(--hh-fs-14)", fontWeight: 500, color: "var(--hh-text-primary)" }}>{n.label}</div>
-                    <div style={{ fontSize: "var(--hh-fs-12)", color: "var(--hh-text-muted)" }}>{n.sub}</div>
-                  </div>
-                  <button
-                    onClick={() => toggleNotification(i)}
-                    style={{
-                      width: 40, height: 24, borderRadius: 9999,
-                      background: notifications[i] ? "var(--hh-accent)" : "hsl(240 4% 18%)",
-                      border: "none", padding: 2,
-                      display: "flex", alignItems: "center",
-                      cursor: "pointer", transition: "background 0.2s", flexShrink: 0,
-                    }}
-                  >
-                    <div style={{
-                      width: 20, height: 20, borderRadius: "50%", background: "white",
-                      marginLeft: notifications[i] ? "auto" : 0,
-                      transition: "margin 0.2s",
-                    }} />
-                  </button>
-                </div>
-              ))}
-            </div>
+            {NOTIFICATIONS.map((item, index) => (
+              <button
+                type="button"
+                key={item.key}
+                onClick={() => setNotifications((current) => current.map((value, itemIndex) => itemIndex === index ? !value : value))}
+                style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", border: "none", borderBottom: index < NOTIFICATIONS.length - 1 ? "1px solid var(--hh-border)" : "none", background: "transparent", textAlign: "left", cursor: "pointer" }}
+              >
+                <span>
+                  <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: "var(--hh-text-primary)" }}>{item.label}</span>
+                  <span style={{ display: "block", fontSize: 12, color: "var(--hh-text-muted)" }}>{item.sub}</span>
+                </span>
+                <span className="hh-badge">{notifications[index] ? "On" : "Off"}</span>
+              </button>
+            ))}
           </div>
-
-          {/* Danger zone */}
-          <div className="hh-card" style={{ borderColor: "rgba(239, 68, 68, 0.2)" }}>
-            <h3 className="hh-panel-heading" style={{ color: "#f87171" }}>Danger Zone</h3>
-            <p style={{ fontSize: "var(--hh-fs-14)", color: "var(--hh-text-muted)", marginBottom: 16 }}>
-              Permanently delete your coach account and all associated data.
-            </p>
-            <button
-              onClick={() => setShowDeleteModal(true)}
-              style={{
-                border: "1px solid rgba(239, 68, 68, 0.3)", color: "#f87171",
-                background: "transparent", padding: "8px 16px",
-                borderRadius: "var(--hh-radius-sm)", fontSize: "var(--hh-fs-14)",
-                cursor: "pointer", fontFamily: "var(--hh-font-body)",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-            >
-              Delete Account
-            </button>
-          </div>
-
         </div>
       </main>
-
-      {/* Delete modal */}
-      {showDeleteModal && (
-        <div
-          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
-          onClick={() => setShowDeleteModal(false)}
-        >
-          <div
-            className="hh-card"
-            style={{ width: "100%", maxWidth: 384, borderColor: "rgba(239, 68, 68, 0.3)" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-              <h3 style={{ fontWeight: 600, color: "#f87171" }}>Delete Account</h3>
-              <button onClick={() => setShowDeleteModal(false)} style={{ background: "none", border: "none", cursor: "pointer" }}>
-                <X size={16} color="var(--hh-text-muted)" />
-              </button>
-            </div>
-            <p style={{ fontSize: "var(--hh-fs-14)", color: "var(--hh-text-muted)", marginBottom: 16 }}>
-              This action cannot be undone. All your data will be permanently deleted.
-            </p>
-            <div style={{ display: "flex", gap: 12 }}>
-              <button
-                className="btn btn--ghost"
-                style={{ flex: 1, border: "1px solid var(--hh-border)" }}
-                onClick={() => setShowDeleteModal(false)}
-              >
-                Cancel
-              </button>
-              <button
-                style={{
-                  flex: 1, background: "#dc2626", color: "white",
-                  border: "none", borderRadius: "var(--hh-radius-sm)",
-                  fontSize: "var(--hh-fs-14)", fontWeight: 600,
-                  cursor: "pointer", fontFamily: "var(--hh-font-body)",
-                }}
-                onClick={() => setShowDeleteModal(false)}
-              >
-                Delete Forever
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
     </div>
   );
 }

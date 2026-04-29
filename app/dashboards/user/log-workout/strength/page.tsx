@@ -2,27 +2,28 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { activityService } from "@/services/activityService";
+import { exerciseService } from "@/services/exerciseService";
+import { useAuthStore } from "@/store/authStore";
 
 // Types for our workout data
 type SetData = { reps: number | ""; weight: number | "" };
-type Exercise = { id: string; name: string; muscleGroup: string };
+type Exercise = { id: number | null; name: string; muscleGroup: string; isCustom?: boolean };
 type LoggedExercise = { exercise: Exercise; sets: SetData[] };
-
-// Mock data for today's scheduled plan
-const INITIAL_PLAN: Exercise[] = [
-  { id: "e1", name: "Barbell Squat", muscleGroup: "Legs" },
-  { id: "e2", name: "Push Up", muscleGroup: "Chest" },
-  { id: "e3", name: "Deadlift", muscleGroup: "Back" },
-];
 
 export default function LogStrengthWorkoutPage() {
   const router = useRouter();
+  const { user } = useAuthStore();
+  const userId = user?.id ?? user?.user_id;
 
   // State Management
-  const [plannedExercises, setPlannedExercises] = useState<Exercise[]>(INITIAL_PLAN);
+  const [plannedExercises, setPlannedExercises] = useState<Exercise[]>([]);
   const [loggedExercises, setLoggedExercises] = useState<LoggedExercise[]>([]);
   const [activeExercise, setActiveExercise] = useState<Exercise | null>(null);
   const [currentSets, setCurrentSets] = useState<SetData[]>([{ reps: "", weight: "" }]);
+  const [loadingExercises, setLoadingExercises] = useState(true);
+  const [savingWorkout, setSavingWorkout] = useState(false);
+  const [error, setError] = useState("");
   
   // UI Flow States
   const [isFinished, setIsFinished] = useState(false);
@@ -32,6 +33,28 @@ export default function LogStrengthWorkoutPage() {
   // Custom Exercise State
   const [customName, setCustomName] = useState("");
   const [customMuscle, setCustomMuscle] = useState("Chest");
+
+  useEffect(() => {
+    const loadExercises = async () => {
+      try {
+        setLoadingExercises(true);
+        const response = await exerciseService.getAll();
+        setPlannedExercises(
+          response.exercises.map((exercise) => ({
+            id: exercise.e_id ?? exercise.id ?? null,
+            name: exercise.name,
+            muscleGroup: exercise.muscle_group || "General",
+          })),
+        );
+      } catch (caughtError) {
+        setError(caughtError instanceof Error ? caughtError.message : "Unable to load exercises.");
+      } finally {
+        setLoadingExercises(false);
+      }
+    };
+
+    void loadExercises();
+  }, []);
 
   // Native Browser Reload Protection (Alt Flow 2 partially)
   useEffect(() => {
@@ -49,7 +72,7 @@ export default function LogStrengthWorkoutPage() {
   const handleSelectExercise = (exercise: Exercise) => {
     setActiveExercise(exercise);
     // If they already logged sets for this load them back up to edit
-    const existing = loggedExercises.find((le) => le.exercise.id === exercise.id);
+    const existing = loggedExercises.find((le) => le.exercise.id === exercise.id && le.exercise.name === exercise.name);
     setCurrentSets(existing ? existing.sets : [{ reps: "", weight: "" }]);
   };
 
@@ -61,7 +84,7 @@ export default function LogStrengthWorkoutPage() {
     const validSets = currentSets.filter((s) => s.reps !== "" || s.weight !== "");
     
     setLoggedExercises((prev) => {
-      const filtered = prev.filter((le) => le.exercise.id !== activeExercise.id);
+      const filtered = prev.filter((le) => !(le.exercise.id === activeExercise.id && le.exercise.name === activeExercise.name));
       return [...filtered, { exercise: activeExercise, sets: validSets }];
     });
     
@@ -69,10 +92,46 @@ export default function LogStrengthWorkoutPage() {
   };
 
   // Step 7 and 8: Finish Workout and show summary
-  const handleFinishWorkout = () => {
-    setIsFinished(true);
-    // In the final version, this is where a fetch POST request will go to save the workout
-    // and trigger Step 9 (System updates progress dashboard).
+  const handleFinishWorkout = async () => {
+    setError("");
+
+    if (!userId) {
+      setError("Sign in before saving your workout.");
+      return;
+    }
+
+    if (loggedExercises.length === 0) {
+      setError("Log at least one exercise before finishing.");
+      return;
+    }
+
+    try {
+      setSavingWorkout(true);
+      await Promise.all(
+        loggedExercises.map((log) => {
+          const validSets = log.sets.filter((set) => set.reps !== "" || set.weight !== "");
+          const repsCompleted = validSets.reduce((sum, set) => sum + Number(set.reps || 0), 0);
+          const heaviestWeight = validSets.reduce((max, set) => Math.max(max, Number(set.weight || 0)), 0);
+          if (!log.exercise.id) {
+            throw new Error("Custom exercises must be added to the exercise database before they can be logged.");
+          }
+
+          return activityService.logStrength({
+            log_date: new Date().toISOString().slice(0, 10),
+            exercise_id: log.exercise.id,
+            sets_completed: validSets.length,
+            reps_completed: repsCompleted,
+            weight_used: heaviestWeight,
+            notes: `${log.exercise.name} logged from strength workout page.`,
+          });
+        }),
+      );
+      setIsFinished(true);
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : "Unable to save workout.");
+    } finally {
+      setSavingWorkout(false);
+    }
   };
 
   // Alt Flow 1: Add Custom Exercise
@@ -80,9 +139,10 @@ export default function LogStrengthWorkoutPage() {
     if (!customName.trim()) return;
     
     const newExercise: Exercise = {
-      id: `custom_${Date.now()}`,
+      id: null,
       name: customName,
       muscleGroup: customMuscle,
+      isCustom: true,
     };
     
     setPlannedExercises((prev) => [...prev, newExercise]);
@@ -103,8 +163,7 @@ export default function LogStrengthWorkoutPage() {
   const handleLeaveAction = (action: "save" | "discard") => {
     setShowLeavePrompt(false);
     if (action === "save") {
-      // Mock saving partial progress to DB. Working version will be added later
-      console.log("Progress saved for later.");
+      void handleFinishWorkout();
     }
     router.push("/dashboards/user");
   };
@@ -162,12 +221,15 @@ export default function LogStrengthWorkoutPage() {
               <div className="hh-card__header">
                 <span className="hh-card__label">Today's Plan</span>
               </div>
+              {error ? <p className="hh-error-msg">{error}</p> : null}
               
               <ul className="hh-activity-list" style={{ marginBottom: "24px" }}>
+                {loadingExercises ? <p className="hh-text-muted">Loading exercises...</p> : null}
+                {!loadingExercises && plannedExercises.length === 0 ? <p className="hh-text-muted">No exercises found.</p> : null}
                 {plannedExercises.map((ex) => {
-                  const isLogged = loggedExercises.some((le) => le.exercise.id === ex.id);
+                  const isLogged = loggedExercises.some((le) => le.exercise.id === ex.id && le.exercise.name === ex.name);
                   return (
-                    <li key={ex.id} className="hh-activity-item" style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: "12px 0" }}>
+                    <li key={`${ex.id ?? "custom"}-${ex.name}`} className="hh-activity-item" style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: "12px 0" }}>
                       <div>
                         <span className="hh-activity-item__text" style={{ fontWeight: 500 }}>
                           {ex.name}
@@ -186,8 +248,8 @@ export default function LogStrengthWorkoutPage() {
                 <button className="btn btn--ghost" style={{ flex: 1, border: "1px dashed var(--hh-border)" }} onClick={() => setShowCustomModal(true)}>
                   + Add Custom Exercise
                 </button>
-                <button className="btn btn--primary" style={{ flex: 1 }} onClick={handleFinishWorkout}>
-                  Finish Workout
+                <button className="btn btn--primary" style={{ flex: 1 }} onClick={handleFinishWorkout} disabled={savingWorkout}>
+                  {savingWorkout ? "Saving..." : "Finish Workout"}
                 </button>
               </div>
             </div>

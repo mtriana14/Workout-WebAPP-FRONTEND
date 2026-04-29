@@ -1,4 +1,6 @@
-const BASE_URL = "http://localhost:5000/api/";
+import { useAuthStore } from "@/store/authStore";
+
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api/";
 const COMPANY_ID = process.env.NEXT_PUBLIC_COMPANY_ID ?? "1";
 
 interface RequestOptions {
@@ -11,16 +13,44 @@ interface RequestOptions {
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
 
-  const authStorage = localStorage.getItem("auth"); // "auth" es el name que pusiste en persist
-  if (!authStorage) return null;
+  try {
+    const session = localStorage.getItem("herahealth.auth");
+    if (session) {
+      const parsed = JSON.parse(session);
+      if (typeof parsed.token === "string" && parsed.token.length > 0) {
+        return parsed.token;
+      }
+    }
+  } catch {
+    // Fall through to the Zustand store key.
+  }
 
   try {
-    const parsed = JSON.parse(authStorage);
-    return parsed.state?.token || null;
-  } catch (e) {
+    const persistedStore = localStorage.getItem("auth");
+    if (persistedStore) {
+      const parsed = JSON.parse(persistedStore);
+      if (typeof parsed.state?.token === "string" && parsed.state.token.length > 0) {
+        return parsed.state.token;
+      }
+    }
+  } catch {
     return null;
   }
+
+  return null;
 }
+
+function clearStoredAuth() {
+  if (typeof window === "undefined") return;
+  useAuthStore.getState().clearAuth();
+  localStorage.removeItem("auth");
+  localStorage.removeItem("herahealth.auth");
+}
+
+function buildUrl(endpoint: string) {
+  return `${BASE_URL.replace(/\/$/, "")}/${endpoint.replace(/^\//, "")}`;
+}
+
 export async function apiClient<T>(
   endpoint: string,
   options: RequestOptions = {},
@@ -32,22 +62,39 @@ export async function apiClient<T>(
     public: isPublic = false,
   } = options;
   const token = isPublic ? null : getToken();
+  const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
+  const requestHeaders: Record<string, string> = {
+    Accept: "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...headers,
+  };
 
-  const res = await fetch(`${BASE_URL}${endpoint}`, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...headers,
-    },
-    body: body ? JSON.stringify(body) : undefined,
-    cache: "no-store",
-  });
+  if (!isFormData) {
+    requestHeaders["Content-Type"] = "application/json";
+  }
+
+  let res: Response;
+  const url = buildUrl(endpoint);
+
+  try {
+    res = await fetch(url, {
+      method,
+      headers: requestHeaders,
+      body: body ? (isFormData ? body : JSON.stringify(body)) : undefined,
+      cache: "no-store",
+    });
+  } catch {
+    throw new Error(`Could not reach the backend at ${BASE_URL}. Make sure the Flask server is running.`);
+  }
 
   const json = await res.json().catch(() => null);
 
   if (!res.ok) {
+    if (res.status === 401) {
+      clearStoredAuth();
+      throw new Error("Session expired. Please sign in again.");
+    }
+
     const message =
       json && typeof json === "object"
         ? ((json as { error?: string; message?: string }).error ??

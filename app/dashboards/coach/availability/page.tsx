@@ -40,7 +40,7 @@ const DEFAULT_SCHEDULE: Record<DayOfWeek, DaySchedule> = {
 };
 
 export default function AvailabilityPage() {
-  const { user } = useAuthStore();
+  const { user, token, hasHydrated } = useAuthStore();
   const [schedule, setSchedule] =
     useState<Record<DayOfWeek, DaySchedule>>(DEFAULT_SCHEDULE);
   const [loading, setLoading] = useState(true);
@@ -54,8 +54,20 @@ export default function AvailabilityPage() {
 
   // Load existing availability
   useEffect(() => {
+    if (!hasHydrated) {
+      return;
+    }
+
     const loadAvailability = async () => {
-      if (!userId) return;
+      if (!userId || !token) {
+        setLoading(false);
+        setToast({
+          message: "Sign in as a coach to manage availability.",
+          type: "error",
+        });
+        return;
+      }
+
       try {
         const data = await availabilityService.get(userId);
 
@@ -70,14 +82,17 @@ export default function AvailabilityPage() {
           };
         });
         setSchedule(newSchedule);
-      } catch (err) {
-        console.error("Failed to load availability", err);
+      } catch (error) {
+        setToast({
+          message: error instanceof Error ? error.message : "Failed to load availability.",
+          type: "error",
+        });
       } finally {
         setLoading(false);
       }
     };
     loadAvailability();
-  }, [userId]);
+  }, [hasHydrated, token, userId]);
 
   const showToast = (message: string, type: "success" | "error") => {
     setToast({ message, type });
@@ -106,7 +121,10 @@ export default function AvailabilityPage() {
 
   // Save availability
   const handleSave = async () => {
-    if (!userId) return;
+    if (!userId || !token) {
+      showToast("Sign in as a coach before saving availability.", "error");
+      return;
+    }
 
     setSaving(true);
     try {

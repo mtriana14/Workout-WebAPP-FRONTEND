@@ -15,7 +15,12 @@ import {
   Utensils, 
   TrendingUp,
   Bell,
-  User
+  User,
+  DollarSign,
+  Images,
+  ReceiptText,
+  Star,
+  CalendarDays
 } from "lucide-react";
 
 export interface NavItem {
@@ -48,6 +53,7 @@ export const NAV_ITEMS_COACH: NavItem[] = [
   { label: "Workout Plans", icon: Activity,       href: "/dashboards/coach/workouts",      active: false },
   { label: "Meal Plans",    icon: Utensils,       href: "/dashboards/coach/meals",         active: false },
   { label: "Schedule",      icon: Bell,           href: "/dashboards/coach/schedule",      active: false },
+  { label: "Coach Revenue", icon: DollarSign,     href: "/dashboards/coach/revenue",       active: false },
   { label: "Chat",          icon: MessageCircle,  href: "/dashboards/coach/chat",          active: false },
   { label: "Profile",       icon: User,           href: "/dashboards/coach/profile",       active: false },
   { label: "Settings",      icon: Settings,       href: "/dashboards/coach/settings",      active: false },
@@ -58,5 +64,9 @@ export const NAV_ITEMS_CLIENT: NavItem[] = [
   { label: "Find Coaches", icon: Search,          href: "/dashboards/client/coaches",   active: false },
   { label: "My Workouts",  icon: Activity,        href: "/dashboards/client/workouts",  active: false },
   { label: "My Meals",     icon: Utensils,        href: "/dashboards/client/meals",     active: false },
+  { label: "Weekly Calendar", icon: CalendarDays, href: "/weekly-calendar",             active: false },
   { label: "Progress",     icon: TrendingUp,      href: "/dashboards/client/progress",  active: false },
+  { label: "Progress Photos", icon: Images,       href: "/dashboards/client/progress/photos", active: false },
+  { label: "My Invoices",  icon: ReceiptText,     href: "/my-invoices",                 active: false },
+  { label: "Leave Review", icon: Star,            href: "/leave-a-review",              active: false },
 ];

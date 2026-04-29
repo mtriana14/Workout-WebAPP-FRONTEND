@@ -1,4 +1,4 @@
-import { getStoredAuthToken } from "@/app/lib/api";
+import { apiClient } from "@/lib/api";
 
 export interface ProgressEntry {
   entry_id: number;
@@ -23,6 +23,17 @@ export interface ProgressSummary {
   entries_count: number;
 }
 
+interface ProgressResponse {
+  entries: ProgressEntry[];
+  summary: ProgressSummary;
+}
+
+interface SaveProgressResponse {
+  message: string;
+  entry: ProgressEntry;
+  summary: ProgressSummary;
+}
+
 export interface SaveProgressPayload {
   entry_date: string;
   weight: number | null;
@@ -32,181 +43,279 @@ export interface SaveProgressPayload {
   notes?: string;
 }
 
-export const progressService = {
-  getByClient: async (userId: number) => {
-    const token = getStoredAuthToken();
-    if (!token) throw new Error("Authentication token missing. Please log in again.");
+type ActivityType = "strength" | "cardio" | "steps" | "calories";
 
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:5000/api";
-    
-    // 1. Fetch aggregate totals, raw logs (for notes), and user profile (for weight) concurrently
-    const [aggRes, logsRes, userRes] = await Promise.all([
-      fetch(`${API_BASE_URL}/logs/aggregate?period=week`, {
-        headers: { "Authorization": `Bearer ${token}` }
-      }),
-      fetch(`${API_BASE_URL}/logs`, {
-        headers: { "Authorization": `Bearer ${token}` }
-      }),
-      fetch(`${API_BASE_URL}/getusers?user_id=${userId}`, {
-        headers: { "Authorization": `Bearer ${token}` }
-      })
-    ]);
+interface ActivityLog {
+  log_id: number;
+  user_id: number;
+  activity_type: ActivityType;
+  log_date: string | null;
+  notes: string | null;
+  created_at: string | null;
+  sets_completed?: number | null;
+  reps_completed?: number | null;
+  duration_minutes?: number | null;
+  calorie_intake?: number | null;
+}
 
-    if (!aggRes.ok) throw new Error("Failed to fetch progress summary.");
+interface LogsResponse {
+  total: number;
+  logs: ActivityLog[];
+}
 
-    const rawData = await aggRes.json();
-    const logsData = logsRes.ok ? await logsRes.json() : { logs: [] };
-    const userData = userRes.ok ? await userRes.json() : [];
+interface AggregateDaily {
+  date: string;
+  strength_sessions?: number;
+  cardio_sessions?: number;
+  calories?: number;
+}
 
-    // 2. Extract Current Weight from the profile
-    let currentWeight = null;
-    if (userData.length > 0) {
-      const userRow = userData[0];
-      currentWeight = Array.isArray(userRow) ? userRow[9] : userRow.weight;
+interface AggregateResponse {
+  totals?: {
+    strength_sessions?: number;
+    cardio_sessions?: number;
+    total_calories?: number;
+    active_days?: number;
+  };
+  daily?: AggregateDaily[];
+}
+
+interface StepsCaloriesResponse {
+  message: string;
+  log: ActivityLog;
+}
+
+const PROGRESS_STORAGE_PREFIX = "herahealth.progress.";
+const GOAL_MARKER = "[Goal Met]";
+
+function storageKey(userId: number) {
+  return `${PROGRESS_STORAGE_PREFIX}${userId}`;
+}
+
+function getLocalEntries(userId: number): ProgressEntry[] {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(storageKey(userId));
+    return rawValue ? (JSON.parse(rawValue) as ProgressEntry[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function setLocalEntries(userId: number, entries: ProgressEntry[]) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(storageKey(userId), JSON.stringify(entries));
+}
+
+function entryFromPayload(userId: number, payload: SaveProgressPayload): ProgressEntry {
+  const timestamp = new Date().toISOString();
+  return {
+    entry_id: Date.now(),
+    user_id: userId,
+    entry_date: payload.entry_date,
+    weight: payload.weight,
+    workouts_completed: Number(payload.workouts_completed || 0),
+    calories_burned: Number(payload.calories_burned || 0),
+    goal_completed: Boolean(payload.goal_completed),
+    notes: payload.notes?.trim() || null,
+    created_at: timestamp,
+    updated_at: timestamp,
+  };
+}
+
+function upsertLocalEntry(userId: number, entry: ProgressEntry) {
+  const existingEntries = getLocalEntries(userId);
+  const withoutSameDate = existingEntries.filter((item) => item.entry_date !== entry.entry_date);
+  const entries = [entry, ...withoutSameDate].sort((a, b) => b.entry_date.localeCompare(a.entry_date));
+  setLocalEntries(userId, entries);
+  return entries;
+}
+
+function mergeEntries(apiEntries: ProgressEntry[], localEntries: ProgressEntry[]) {
+  const entriesByDate = new Map<string, ProgressEntry>();
+
+  for (const entry of apiEntries) {
+    entriesByDate.set(entry.entry_date, entry);
+  }
+
+  for (const entry of localEntries) {
+    entriesByDate.set(entry.entry_date, entry);
+  }
+
+  return Array.from(entriesByDate.values()).sort((a, b) => b.entry_date.localeCompare(a.entry_date));
+}
+
+function normalizeDate(value: string | null) {
+  return value?.split("T")[0].split(" ")[0] ?? "";
+}
+
+function detailsFromLogs(logs: ActivityLog[]) {
+  const detailsByDate: Record<string, { notes: string[]; goalMet: boolean }> = {};
+
+  for (const log of logs) {
+    const dateKey = normalizeDate(log.log_date);
+    if (!dateKey) {
+      continue;
     }
 
-    // 3. Extract Notes & Goal Status from raw logs and group them by date
-    const detailsByDate: Record<string, { notes: string[], goalMet: boolean }> = {};
-    
-    if (logsData.logs) {
-      logsData.logs.forEach((log: any) => {
-        // Standardize the date format to YYYY-MM-DD
-        const dateKey = log.log_date.split("T")[0].split(" ")[0]; 
-        
-        if (!detailsByDate[dateKey]) {
-          detailsByDate[dateKey] = { notes: [], goalMet: false };
-        }
-        
-        if (log.notes) {
-          if (log.notes.includes("[Goal Met]")) {
-            detailsByDate[dateKey].goalMet = true;
-            const cleanNote = log.notes.replace("[Goal Met]", "").trim();
-            if (cleanNote) detailsByDate[dateKey].notes.push(cleanNote);
-          } else {
-            detailsByDate[dateKey].notes.push(log.notes);
-          }
-        }
-      });
+    detailsByDate[dateKey] ??= { notes: [], goalMet: false };
+
+    if (!log.notes) {
+      continue;
     }
 
-    const today = new Date().toISOString().slice(0, 10);
+    if (log.notes.includes(GOAL_MARKER)) {
+      detailsByDate[dateKey].goalMet = true;
+      const cleanNote = log.notes.replace(GOAL_MARKER, "").trim();
+      if (cleanNote) {
+        detailsByDate[dateKey].notes.push(cleanNote);
+      }
+      continue;
+    }
 
-    // 4. Map the Aggregate 'daily' buckets and inject the notes and weight
-    const mappedEntries: ProgressEntry[] = (rawData.daily || []).map((day: any, index: number) => {
-      const dateKey = day.date.split("T")[0];
-      const details = detailsByDate[dateKey] || { notes: [], goalMet: false };
-      
+    detailsByDate[dateKey].notes.push(log.notes);
+  }
+
+  return detailsByDate;
+}
+
+function entriesFromAggregate(userId: number, aggregate: AggregateResponse, logs: ActivityLog[]) {
+  const detailsByDate = detailsFromLogs(logs);
+
+  return (aggregate.daily ?? [])
+    .map((day, index) => {
+      const dateKey = normalizeDate(day.date);
+      const details = detailsByDate[dateKey] ?? { notes: [], goalMet: false };
+
       return {
         entry_id: index,
         user_id: userId,
         entry_date: dateKey,
-        // Backend doesn't track historical weight, so we assign the current weight to today
-        weight: dateKey === today ? currentWeight : null, 
-        workouts_completed: day.strength_sessions + day.cardio_sessions,
-        calories_burned: day.calories,
-        goal_completed: details.goalMet, 
-        // If multiple logs have notes on the same day, combine them
+        weight: null,
+        workouts_completed: Number(day.strength_sessions ?? 0) + Number(day.cardio_sessions ?? 0),
+        calories_burned: Number(day.calories ?? 0),
+        goal_completed: details.goalMet,
         notes: details.notes.length > 0 ? details.notes.join(" | ") : null,
         created_at: day.date,
         updated_at: day.date,
+      } satisfies ProgressEntry;
+    })
+    .filter((entry) => entry.entry_date)
+    .sort((a, b) => b.entry_date.localeCompare(a.entry_date));
+}
+
+function buildSummary(entries: ProgressEntry[], aggregate?: AggregateResponse): ProgressSummary {
+  const today = new Date();
+  const weekStart = new Date(today);
+  weekStart.setDate(today.getDate() - 6);
+
+  const activeDates = new Set(
+    entries
+      .filter((entry) => entry.goal_completed || entry.workouts_completed > 0)
+      .map((entry) => entry.entry_date),
+  );
+
+  let currentStreak = 0;
+  const cursor = new Date(today);
+  while (activeDates.has(cursor.toISOString().slice(0, 10))) {
+    currentStreak += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  const weightEntries = entries.filter((entry) => entry.weight !== null);
+  const latestWeight = weightEntries[0]?.weight ?? null;
+  const previousWeight = weightEntries[1]?.weight ?? null;
+  const goalsMet = entries.filter((entry) => entry.goal_completed).length;
+
+  return {
+    total_workouts:
+      aggregate?.totals
+        ? Number(aggregate.totals.strength_sessions ?? 0) + Number(aggregate.totals.cardio_sessions ?? 0)
+        : entries.reduce((total, entry) => total + entry.workouts_completed, 0),
+    current_streak: aggregate?.totals?.active_days ?? currentStreak,
+    weekly_calories:
+      aggregate?.totals?.total_calories ??
+      entries.reduce((total, entry) => {
+        const entryDate = new Date(`${entry.entry_date}T00:00:00`);
+        return entryDate >= weekStart && entryDate <= today ? total + entry.calories_burned : total;
+      }, 0),
+    goals_met_percentage: entries.length ? Math.round((goalsMet / entries.length) * 100) : 0,
+    latest_weight: latestWeight,
+    weight_change:
+      latestWeight !== null && previousWeight !== null
+        ? Number((latestWeight - previousWeight).toFixed(1))
+        : null,
+    entries_count: entries.length,
+  };
+}
+
+function logToEntry(userId: number, log: ActivityLog, payload: SaveProgressPayload): ProgressEntry {
+  return {
+    ...entryFromPayload(userId, payload),
+    entry_id: log.log_id,
+    created_at: log.created_at ?? new Date().toISOString(),
+    updated_at: log.created_at ?? new Date().toISOString(),
+  };
+}
+
+export const progressService = {
+  getByClient: async (userId: number): Promise<ProgressResponse> => {
+    const localEntries = getLocalEntries(userId);
+
+    try {
+      const [aggregate, logs] = await Promise.all([
+        apiClient<AggregateResponse>("logs/aggregate?period=week"),
+        apiClient<LogsResponse>("logs").catch(() => ({ total: 0, logs: [] })),
+      ]);
+      const apiEntries = entriesFromAggregate(userId, aggregate, logs.logs);
+      const entries = mergeEntries(apiEntries, localEntries);
+      return {
+        entries,
+        summary: buildSummary(entries, aggregate),
       };
-    }).reverse();
-
-    // 5. Translate totals to summary
-    const mappedSummary: ProgressSummary = {
-      total_workouts: (rawData.totals?.strength_sessions || 0) + (rawData.totals?.cardio_sessions || 0),
-      current_streak: rawData.totals?.active_days || 0,
-      weekly_calories: rawData.totals?.total_calories || 0,
-      goals_met_percentage: 0,
-      latest_weight: currentWeight,
-      weight_change: null,
-      entries_count: rawData.daily?.length || 0,
-    };
-
-    return {
-      entries: mappedEntries,
-      summary: mappedSummary,
-    };
+    } catch {
+      return {
+        entries: localEntries,
+        summary: buildSummary(localEntries),
+      };
+    }
   },
 
-  saveEntry: async (userId: number, payload: SaveProgressPayload) => {
-    const token = getStoredAuthToken();
-    if (!token) throw new Error("Authentication token missing. Please log in again.");
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:5000/api";
+  saveEntry: async (userId: number, payload: SaveProgressPayload): Promise<SaveProgressResponse> => {
+    let entry = entryFromPayload(userId, payload);
+    let message = "Progress saved locally";
 
-    const requests: Promise<any>[] = [];
-
-    // 1. SAVE CALORIES & NOTES
-    // The backend requires either calories or steps to log this route. 
-    // If we only have notes, we send step_count: 0 to satisfy the backend validation.
-    if (payload.calories_burned > 0 || payload.notes || payload.goal_completed) {
-      let finalNotes = payload.notes || "";
-      if (payload.goal_completed) {
-        finalNotes = finalNotes ? `[Goal Met] ${finalNotes}` : "[Goal Met]";
-      }
-
-      const logReq = fetch(`${API_BASE_URL}/logs/steps-calories`, {
+    try {
+      const notes = payload.goal_completed
+        ? `${GOAL_MARKER}${payload.notes ? ` ${payload.notes}` : ""}`
+        : payload.notes || null;
+      const response = await apiClient<StepsCaloriesResponse>("logs/steps-calories", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({
+        body: {
           log_date: payload.entry_date,
-          calorie_intake: payload.calories_burned > 0 ? payload.calories_burned : null,
-          step_count: payload.calories_burned <= 0 ? 0 : null, // Fallback to satisfy backend
-          notes: finalNotes || null
-        })
-      });
-      requests.push(logReq);
-    }
-
-    // 2. SAVE WEIGHT
-    // We utilize the dual-route fallback strategy from your api.ts file
-    if (payload.weight !== null && payload.weight > 0) {
-      const weightReq = fetch(`${API_BASE_URL}/auth/update`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          calorie_intake: payload.calories_burned,
+          step_count: payload.calories_burned > 0 ? null : 0,
+          notes,
         },
-        body: JSON.stringify({ weight: payload.weight })
-      }).then((res) => {
-        if (!res.ok) {
-          // Fallback to the customers route if auth/update returns 404
-          return fetch(`${API_BASE_URL}/customers/${userId}`, {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${token}`
-            },
-            body: JSON.stringify({ weight: payload.weight })
-          });
-        }
-        return res;
       });
-      requests.push(weightReq);
+      entry = logToEntry(userId, response.log, payload);
+      message = response.message;
+    } catch {
+      // Hosted activity logs can return 500. Keep the user's progress usable locally.
     }
 
-    // Execute all necessary saves concurrently
-    const responses = await Promise.all(requests);
-    
-    // Check if any requests failed
-    for (const res of responses) {
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to save some progress data.");
-      }
-    }
-
-    // 3. REFRESH THE PAGE DATA
-    // Pull the fresh aggregate data to update the UI
-    const refreshedData = await progressService.getByClient(userId);
+    const entries = upsertLocalEntry(userId, entry);
 
     return {
-      message: "Progress successfully saved!",
-      entry: refreshedData.entries[0] || null, 
-      summary: refreshedData.summary
+      message,
+      entry,
+      summary: buildSummary(entries),
     };
   },
 };

@@ -6,6 +6,7 @@ import { ClipboardList, DollarSign, Users, type LucideIcon } from "lucide-react"
 import NavComponent from "@/components/NavComponent";
 import { SignOutButton } from "@/app/components/signOutButton";
 import { NAV_ITEMS_COACH } from "@/router/router";
+import { coachDashboardService, type CoachDashboard } from "@/services/coachDashboardService";
 import { clientRequestService, type ClientRequest } from "@/services/ClientRequest";
 import { useAuthStore } from "@/store/authStore";
 import { Dumbbell } from "lucide-react";
@@ -19,30 +20,40 @@ interface CoachCard {
 
 export default function CoachDashboardPage() {
   const user = useAuthStore((state) => state.user);
+  const token = useAuthStore((state) => state.token);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const [pendingRequests, setPendingRequests] = useState<ClientRequest[]>([]);
+  const [dashboard, setDashboard] = useState<CoachDashboard | null>(null);
   const [loading, setLoading] = useState(true);
-  const coachId = user?.id ?? user?.user_id;
+  const [error, setError] = useState("");
   const displayName = user?.first_name ?? user?.firstName ?? user?.name ?? "Coach";
 
   useEffect(() => {
-    if (!coachId) {
+    if (!hasHydrated) {
+      return;
+    }
+
+    if (!token) {
+      setError("Sign in as a coach to view your dashboard.");
       setLoading(false);
       return;
     }
 
     const loadData = async () => {
       try {
-        const response = await clientRequestService.getPending(coachId);
-        setPendingRequests(response.requests ?? []);
+        const dashboardResponse = await coachDashboardService.get();
+        setDashboard(dashboardResponse);
+        const requestResponse = await clientRequestService.getPending(dashboardResponse.coach_id);
+        setPendingRequests(requestResponse.requests ?? []);
       } catch (error) {
-        console.error("Failed to load coach dashboard", error);
+        setError(error instanceof Error ? error.message : "Failed to load coach dashboard.");
       } finally {
         setLoading(false);
       }
     };
 
     void loadData();
-  }, [coachId]);
+  }, [hasHydrated, token]);
 
   const cards: CoachCard[] = [
     {
@@ -54,14 +65,14 @@ export default function CoachDashboardPage() {
     {
       label: "Active Clients",
       icon: Users,
-      value: "—",
-      helper: "Client total is available on the clients page",
+      value: loading ? "..." : String(dashboard?.active_clients.count ?? 0),
+      helper: `${dashboard?.active_clients.new_this_month ?? 0} new this month`,
     },
     {
       label: "Revenue",
       icon: DollarSign,
-      value: "—",
-      helper: "Monthly coach earnings are not wired yet",
+      value: loading ? "..." : `$${(dashboard?.earnings.this_month ?? 0).toLocaleString()}`,
+      helper: "This month",
     },
   ];
 
@@ -96,6 +107,7 @@ export default function CoachDashboardPage() {
             <h1 className="hh-page-title">COACH DASHBOARD</h1>
             <p className="hh-page-subtitle">Welcome back, {displayName}.</p>
           </div>
+          {error ? <p className="hh-error-msg">{error}</p> : null}
 
           <div className="hh-stats-grid">
             {cards.map((card) => (

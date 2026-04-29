@@ -1,15 +1,51 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { resolveMediaUrl } from "@/lib/media";
+import { fileToDataUrl, getStoredProfilePhoto, setStoredProfilePhoto } from "@/lib/profilePhotoStorage";
+import { profileService } from "@/services/profileService";
+import { useAuthStore } from "@/store/authStore";
+
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [currentPhoto, setCurrentPhoto] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState<string>("");
+  const [status, setStatus] = useState<string>("");
   const [isUploading, setIsUploading] = useState<boolean>(false);
+  const { user } = useAuthStore();
+  const userId = user?.id ?? user?.user_id;
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const displayedPhoto = previewUrl ?? resolveMediaUrl(currentPhoto);
+
+  useEffect(() => {
+    if (!userId) {
+      return;
+    }
+
+    const loadProfile = async () => {
+      const storedPhoto = getStoredProfilePhoto(userId);
+      if (storedPhoto) {
+        setCurrentPhoto(storedPhoto);
+      }
+
+      try {
+        const response = await profileService.getUser(userId);
+        if (response.user.profile_photo) {
+          setCurrentPhoto(response.user.profile_photo);
+        }
+      } catch {
+        // The hosted getusers endpoint can fail independently of the upload endpoint.
+        // Keep the upload UI usable and rely on the locally cached image if available.
+      }
+    };
+
+    void loadProfile();
+  }, [userId]);
 
   // Step 1 and 2: User clicks "Upload Photo", system opens picker
   const handleUploadClick = () => {
@@ -37,29 +73,49 @@ export default function ProfilePage() {
     // Step 4: System previews the image and asks the user to confirm
     setError("");
     setSelectedFile(file);
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
     setPreviewUrl(URL.createObjectURL(file));
   };
 
   // Step 5, 6 and 7: User confirms, system uploads and displays updated photo
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!selectedFile || !previewUrl) return;
+    if (!userId) {
+      setError("Sign in before uploading a profile photo.");
+      return;
+    }
     
     setIsUploading(true);
+    setError("");
+    setStatus("");
 
-    // Mocking the backend upload delay
-    setTimeout(() => {
-      setCurrentPhoto(previewUrl);
+    try {
+      const response = await profileService.uploadPhoto(selectedFile);
+      const savedPhoto = response.profile_photo ?? await fileToDataUrl(selectedFile);
+      setStoredProfilePhoto(userId, savedPhoto);
+
+      URL.revokeObjectURL(previewUrl);
+      setCurrentPhoto(savedPhoto);
       setPreviewUrl(null);
       setSelectedFile(null);
-      setIsUploading(false);
+      setStatus(response.Success ?? "Profile photo uploaded");
       
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
-    }, 1000);
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : "Unable to upload profile photo.");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleCancelPreview = () => {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
     setPreviewUrl(null);
     setSelectedFile(null);
     setError("");
@@ -68,11 +124,19 @@ export default function ProfilePage() {
     }
   };
 
+  const handleBack = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+      return;
+    }
+
+    router.push("/dashboards/user");
+  };
+
   return (
     <div className="hh-dash-root">
       <main className="hh-dash-main" style={{ display: "flex", justifyContent: "center", paddingTop: "64px" }}>
         <div className="hh-dash-content" style={{ alignItems: "center", textAlign: "center", width: "100%", maxWidth: "600px" }}>
-          
           <div>
             <h1 className="hh-page-title">Profile Settings</h1>
             <p className="hh-page-subtitle">Manage your account details and profile photo.</p>
@@ -99,9 +163,9 @@ export default function ProfilePage() {
                 justifyContent: "center"
               }}
             >
-              {previewUrl || currentPhoto ? (
+              {displayedPhoto ? (
                 <img 
-                  src={previewUrl || currentPhoto || ""} 
+                  src={displayedPhoto} 
                   alt="User Profile" 
                   style={{ width: "100%", height: "100%", objectFit: "cover" }} 
                 />
@@ -114,6 +178,7 @@ export default function ProfilePage() {
 
             {/* Error Message Display */}
             {error && <p className="hh-error-msg" style={{ marginTop: "0" }}>{error}</p>}
+            {status && <p className="hh-text-green" style={{ marginTop: "0" }}>{status}</p>}
 
             <input 
               type="file" 
@@ -149,6 +214,14 @@ export default function ProfilePage() {
             )}
 
           </div>
+
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={handleBack}
+          >
+            Back to Dashboard
+          </button>
         </div>
       </main>
     </div>

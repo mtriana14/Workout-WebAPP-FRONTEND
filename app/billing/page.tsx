@@ -1,17 +1,47 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CreditCard, CheckCircle } from "lucide-react";
 import { MemberPortalShell } from "@/app/components/memberPortalShell";
+import { billingService, type BillingCoach, type Invoice } from "@/services/billingService";
+import { useAuthStore } from "@/store/authStore";
 
 export default function BillingPage() {
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [coaches, setCoaches] = useState<BillingCoach[]>([]);
+  const [selectedCoachId, setSelectedCoachId] = useState("");
+  const [amount, setAmount] = useState("150");
+  const { user } = useAuthStore();
+  const userId = user?.id ?? user?.user_id;
 
   // New state variables for payment fields
   const [cardNumber, setCardNumber] = useState("");
   const [expiry, setExpiry] = useState("");
   const [cvc, setCvc] = useState("");
+
+  useEffect(() => {
+    const loadBillingData = async () => {
+      try {
+        const [coachResponse, invoiceResponse] = await Promise.all([
+          billingService.getCoaches(),
+          userId ? billingService.getInvoices() : Promise.resolve({ invoices: [] }),
+        ]);
+        setCoaches(coachResponse.coaches);
+        setInvoices(invoiceResponse.invoices);
+        if (coachResponse.coaches[0]) {
+          setSelectedCoachId(String(coachResponse.coaches[0].coach_id));
+          setAmount(String(coachResponse.coaches[0].hourly_rate ?? 150));
+        }
+      } catch (caughtError) {
+        setError(caughtError instanceof Error ? caughtError.message : "Unable to load billing data.");
+      }
+    };
+
+    void loadBillingData();
+  }, [userId]);
 
   // Input Formatting Handlers
   const handleCardChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -44,29 +74,50 @@ export default function BillingPage() {
     setCvc(val);
   };
 
-  function handleSubscribe(e: React.FormEvent) {
+  async function handleSubscribe(e: React.FormEvent) {
     e.preventDefault();
+    setError("");
+
+    if (!userId) {
+      setError("Sign in before subscribing.");
+      return;
+    }
+
+    if (!selectedCoachId) {
+      setError("Select a coach before subscribing.");
+      return;
+    }
 
     // Basic pre-submit validation check
     if (cardNumber.replace(/\s/g, "").length < 15) {
-      alert("Please enter a valid card number.");
+      setError("Please enter a valid card number.");
       return;
     }
     if (expiry.length < 5) {
-      alert("Please enter a complete expiry date (MM/YY).");
+      setError("Please enter a complete expiry date (MM/YY).");
       return;
     }
     if (cvc.length < 3) {
-      alert("Please enter a valid CVC code.");
+      setError("Please enter a valid CVC code.");
       return;
     }
 
     setIsSubscribing(true);
-    // Fake Stripe API delay for the demo
-    setTimeout(() => {
+    try {
+      await billingService.subscribe({
+        coach_id: Number(selectedCoachId),
+        card_number: cardNumber,
+        expiry,
+        cvc,
+      });
+      const invoiceResponse = await billingService.getInvoices();
+      setInvoices(invoiceResponse.invoices);
       setIsSubscribing(false);
       setSuccess(true);
-    }, 1500); 
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : "Unable to create subscription.");
+      setIsSubscribing(false);
+    }
   }
 
   return (
@@ -87,6 +138,39 @@ export default function BillingPage() {
           ) : (
             <form onSubmit={handleSubscribe} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <p className="hh-portal-card-copy">Secure payment processing powered by Stripe.</p>
+              {error ? <p className="hh-error-msg">{error}</p> : null}
+              <div className="hh-field">
+                <label className="hh-field__label">Coach</label>
+                <select
+                  className="hh-input"
+                  value={selectedCoachId}
+                  onChange={(event) => {
+                    const coach = coaches.find((item) => item.coach_id === Number(event.target.value));
+                    setSelectedCoachId(event.target.value);
+                    setAmount(String(coach?.hourly_rate ?? 150));
+                  }}
+                  style={{ appearance: "auto" }}
+                  required
+                >
+                  {coaches.length === 0 ? <option value="">No coaches available</option> : null}
+                  {coaches.map((coach) => (
+                    <option key={coach.coach_id} value={coach.coach_id}>
+                      {coach.name} · {coach.specialization}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="hh-field">
+                <label className="hh-field__label">Monthly Amount</label>
+                <input
+                  className="hh-input"
+                  type="number"
+                  min="1"
+                  value={amount}
+                  onChange={(event) => setAmount(event.target.value)}
+                  required
+                />
+              </div>
               
               <div className="hh-field">
                 <label className="hh-field__label">Card Number</label>
@@ -124,7 +208,7 @@ export default function BillingPage() {
               </div>
 
               <button type="submit" className="btn btn--primary" disabled={isSubscribing}>
-                {isSubscribing ? "Processing..." : "Pay $150.00 / month"}
+                {isSubscribing ? "Processing..." : `Pay $${Number(amount || 0).toFixed(2)} / month`}
               </button>
             </form>
           )}
@@ -133,20 +217,19 @@ export default function BillingPage() {
         <section className="hh-card" style={{ flex: 1 }}>
           <h2 className="hh-panel-heading" style={{ marginBottom: 16 }}>Billing History</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #2c2c30", paddingBottom: 12 }}>
-              <div>
-                <p style={{ color: "white", fontSize: 14 }}>Coach Subscription</p>
-                <p className="hh-text-muted" style={{ fontSize: 12 }}>Mar 1, 2026</p>
+            {invoices.length === 0 ? (
+              <p className="hh-text-muted" style={{ fontSize: 13 }}>No invoices yet.</p>
+            ) : invoices.slice(0, 6).map((invoice, index) => (
+              <div key={invoice.payment_id} style={{ display: "flex", justifyContent: "space-between", borderBottom: index < invoices.length - 1 ? "1px solid #2c2c30" : "none", paddingBottom: 12 }}>
+                <div>
+                  <p style={{ color: "white", fontSize: 14 }}>{invoice.description ?? "Coach Subscription"}</p>
+                  <p className="hh-text-muted" style={{ fontSize: 12 }}>
+                    {invoice.paid_at ? new Date(invoice.paid_at).toLocaleDateString() : "Pending"} · {invoice.counterparty ?? "Coach"}
+                  </p>
+                </div>
+                <p style={{ color: "white", fontWeight: 600 }}>${invoice.amount.toFixed(2)}</p>
               </div>
-              <p style={{ color: "white", fontWeight: 600 }}>$150.00</p>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <div>
-                <p style={{ color: "white", fontSize: 14 }}>Coach Subscription</p>
-                <p className="hh-text-muted" style={{ fontSize: 12 }}>Feb 1, 2026</p>
-              </div>
-              <p style={{ color: "white", fontWeight: 600 }}>$150.00</p>
-            </div>
+            ))}
           </div>
         </section>
       </div>

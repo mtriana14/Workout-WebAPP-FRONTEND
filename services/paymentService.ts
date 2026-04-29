@@ -70,4 +70,18 @@ export const paymentService = {
     apiClient<{ message: string }>(`admin/payments/${paymentId}/refund`, {
       method: "POST",
     }),
+
+  getCoachRevenue: () =>
+    apiClient<{
+      summary: { total_earned: number; this_month: number; active_clients: number; currency: string };
+      transactions: Array<{
+        payment_id: number;
+        amount: number;
+        status: string;
+        counterparty: string | null;
+        paid_at: string | null;
+        created_at: string | null;
+      }>;
+      count: number;
+    }>("coach/revenue", { method: "GET" }),
 };

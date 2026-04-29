@@ -1,6 +1,7 @@
 import { apiClient } from "@/lib/api";
 
 export interface Exercise {
+  id?: number;
   e_id: number;
   name: string;
   description: string;
@@ -34,7 +35,7 @@ export interface CreateExerciseData {
   equipment_type?: string;
 }
 
-export interface UpdateExerciseData extends Partial<CreateExerciseData> {}
+export type UpdateExerciseData = Partial<CreateExerciseData>;
 
 export const exerciseService = {
   // Get all exercises

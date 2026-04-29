@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import NavComponent from "@/components/NavComponent";
+import { ProfilePhotoButton } from "@/components/ProfilePhotoButton";
 import { SignOutButton } from "@/app/components/signOutButton";
 import { NAV_ITEMS_CLIENT } from "@/router/router";
 import { clientDashboardService, MyCoach, ClientWorkoutPlan, ClientMealPlan } from "@/services/clientDashboardService";
+import { profileService } from "@/services/profileService";
 import { useAuthStore } from "@/store/authStore";
 
 import { Dumbbell } from "lucide-react";
@@ -16,6 +18,7 @@ export default function ClientDashboardPage() {
   const [myCoach, setMyCoach] = useState<MyCoach | null>(null);
   const [workoutPlans, setWorkoutPlans] = useState<ClientWorkoutPlan[]>([]);
   const [mealPlans, setMealPlans] = useState<ClientMealPlan[]>([]);
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const userId = user?.id ?? user?.user_id;
@@ -34,17 +37,19 @@ export default function ClientDashboardPage() {
     }
 
     const loadData = async () => {
-      const resolvedUserId = userId as number;
+      const resolvedUserId = Number(userId);
 
       try {
-        const [coachData, workoutData, mealData] = await Promise.all([
+        const [coachData, workoutData, mealData, profileData] = await Promise.all([
           clientDashboardService.getMyCoach(resolvedUserId),
           clientDashboardService.getMyWorkoutPlans(resolvedUserId),
           clientDashboardService.getMyMealPlans(resolvedUserId),
+          profileService.getUser(resolvedUserId).catch(() => null),
         ]);
         setMyCoach(coachData.coach);
         setWorkoutPlans(workoutData.workout_plans);
         setMealPlans(mealData.meal_plans);
+        setProfilePhoto(profileData?.user.profile_photo ?? null);
       } catch (err) {
         console.error("Failed to load dashboard data", err);
       } finally {
@@ -103,9 +108,12 @@ export default function ClientDashboardPage() {
       {/* Main */}
       <main className="hh-dash-main">
         <div className="hh-dash-content">
-          <div>
-            <h1 className="hh-page-title">MY DASHBOARD</h1>
-            <p className="hh-page-subtitle">Welcome back, {displayName}!</p>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+            <div>
+              <h1 className="hh-page-title">MY DASHBOARD</h1>
+              <p className="hh-page-subtitle">Welcome back, {displayName}!</p>
+            </div>
+            <ProfilePhotoButton displayName={displayName} profilePhoto={profilePhoto} userId={userId} />
           </div>
 
           {/* Stats */}
