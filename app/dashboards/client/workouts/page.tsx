@@ -20,17 +20,20 @@ export default function MyWorkoutsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
   const [selectedPlan, setSelectedPlan] = useState<ClientWorkoutPlan | null>(null);
+  const [form, setForm] = useState({ name: "", description: "" });
+  const [statusMessage, setStatusMessage] = useState("");
 
   const userId = user?.id ?? user?.user_id;
 
   useEffect(() => {
     const loadPlans = async () => {
-      if (!userId) return;
+      if (!userId) {
+        setLoading(false);
+        return;
+      }
       try {
         const data = await clientDashboardService.getMyWorkoutPlans(userId);
         setPlans(data.workout_plans);
-      } catch (err) {
-        console.error("Failed to load workout plans", err);
       } finally {
         setLoading(false);
       }
@@ -46,6 +49,53 @@ export default function MyWorkoutsPage() {
     completed: plans.filter((p) => p.status === "completed").length,
   };
 
+  const handleCreatePlan = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!userId) {
+      setStatusMessage("Sign in before creating a workout plan.");
+      return;
+    }
+
+    if (!form.name.trim()) {
+      setStatusMessage("Workout plan name is required.");
+      return;
+    }
+
+    const plan = clientDashboardService.createMyWorkoutPlan(userId, {
+      name: form.name,
+      description: form.description,
+      status: "active",
+    });
+    setPlans((current) => [plan, ...current]);
+    setForm({ name: "", description: "" });
+    setStatusMessage("Workout plan created.");
+  };
+
+  const updateLocalStatus = (plan: ClientWorkoutPlan, status: ClientWorkoutPlan["status"]) => {
+    if (!userId || plan.source !== "client") {
+      return;
+    }
+
+    const updated = clientDashboardService.updateMyWorkoutPlan(userId, plan.plan_id, { status });
+    if (!updated) {
+      return;
+    }
+
+    setPlans((current) => current.map((item) => (item.plan_id === updated.plan_id ? updated : item)));
+    setSelectedPlan(updated);
+  };
+
+  const deleteLocalPlan = (plan: ClientWorkoutPlan) => {
+    if (!userId || plan.source !== "client") {
+      return;
+    }
+
+    clientDashboardService.deleteMyWorkoutPlan(userId, plan.plan_id);
+    setPlans((current) => current.filter((item) => item.plan_id !== plan.plan_id));
+    setSelectedPlan(null);
+    setStatusMessage("Workout plan deleted.");
+  };
+
   return (
     <div className="hh-dash-root">
       {/* Plan Detail Modal */}
@@ -58,7 +108,7 @@ export default function MyWorkoutsPage() {
                   <h2 style={{ margin: 0, fontSize: 20 }}>🏋️ {selectedPlan.name}</h2>
                   <p style={{ margin: "8px 0 0", fontSize: 14, color: "var(--hh-text-muted)" }}>by {selectedPlan.coach_name}</p>
                 </div>
-                <span style={{ padding: "4px 12px", borderRadius: 12, fontSize: 12, fontWeight: 600, backgroundColor: STATUS_STYLES[selectedPlan.status].bg, color: STATUS_STYLES[selectedPlan.status].color }}>
+                <span style={{ padding: "4px 12px", borderRadius: 12, fontSize: 12, fontWeight: 600, backgroundColor: STATUS_STYLES[selectedPlan.status]?.bg ?? STATUS_STYLES.inactive.bg, color: STATUS_STYLES[selectedPlan.status]?.color ?? STATUS_STYLES.inactive.color }}>
                   {selectedPlan.status}
                 </span>
               </div>
@@ -78,7 +128,17 @@ export default function MyWorkoutsPage() {
                 </p>
               </div>
             </div>
-            <div style={{ padding: "16px 24px", borderTop: "1px solid var(--hh-border)", display: "flex", justifyContent: "flex-end" }}>
+            <div style={{ padding: "16px 24px", borderTop: "1px solid var(--hh-border)", display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+              {selectedPlan.source === "client" ? (
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <button onClick={() => updateLocalStatus(selectedPlan, selectedPlan.status === "completed" ? "active" : "completed")} className="btn btn--ghost" style={{ border: "1px solid var(--hh-border)" }}>
+                    {selectedPlan.status === "completed" ? "Mark Active" : "Mark Completed"}
+                  </button>
+                  <button onClick={() => deleteLocalPlan(selectedPlan)} className="btn btn--ghost" style={{ border: "1px solid var(--hh-border)", color: "var(--hh-error)" }}>
+                    Delete
+                  </button>
+                </div>
+              ) : <span />}
               <button onClick={() => setSelectedPlan(null)} style={{ padding: "10px 20px", border: "1px solid var(--hh-border)", borderRadius: 6, backgroundColor: "transparent", cursor: "pointer", fontSize: 14 }}>Close</button>
             </div>
           </div>
@@ -110,8 +170,23 @@ export default function MyWorkoutsPage() {
         <div className="hh-dash-content">
           <div>
             <h1 className="hh-page-title">MY WORKOUTS</h1>
-            <p className="hh-page-subtitle">View your workout plans from your coach</p>
+            <p className="hh-page-subtitle">Create your own workout plans or view plans from your coach</p>
           </div>
+
+          <form className="hh-card" onSubmit={handleCreatePlan} style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr auto", gap: 12, alignItems: "end" }}>
+            {statusMessage ? <p className="hh-text-green" style={{ gridColumn: "1 / -1", margin: 0 }}>{statusMessage}</p> : null}
+            <div className="hh-field">
+              <label className="hh-field__label">Workout Plan Name</label>
+              <input className="hh-input" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} placeholder="Upper Body Strength" />
+            </div>
+            <div className="hh-field">
+              <label className="hh-field__label">Plan Details</label>
+              <input className="hh-input" value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} placeholder="Exercises, sets, reps, notes" />
+            </div>
+            <button type="submit" className="btn btn--primary">
+              Create Plan
+            </button>
+          </form>
 
           {/* Stats */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
@@ -147,10 +222,11 @@ export default function MyWorkoutsPage() {
                   <div key={plan.plan_id} onClick={() => setSelectedPlan(plan)} style={{ padding: 20, borderBottom: "1px solid var(--hh-border)", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
                       <p style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>{plan.name}</p>
-                      <p style={{ margin: "4px 0 0", fontSize: 13, color: "var(--hh-text-muted)" }}>by {plan.coach_name}</p>
+                      <p style={{ margin: "4px 0 0", fontSize: 13, color: "var(--hh-text-muted)" }}>{plan.coach_name}</p>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <span style={{ padding: "4px 12px", borderRadius: 12, fontSize: 12, fontWeight: 600, backgroundColor: STATUS_STYLES[plan.status].bg, color: STATUS_STYLES[plan.status].color }}>
+                      {plan.source === "client" ? <span className="hh-badge hh-badge--sm">Your Plan</span> : null}
+                      <span style={{ padding: "4px 12px", borderRadius: 12, fontSize: 12, fontWeight: 600, backgroundColor: STATUS_STYLES[plan.status]?.bg ?? STATUS_STYLES.inactive.bg, color: STATUS_STYLES[plan.status]?.color ?? STATUS_STYLES.inactive.color }}>
                         {plan.status}
                       </span>
                       <span style={{ color: "var(--hh-text-muted)" }}>→</span>

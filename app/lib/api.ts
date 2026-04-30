@@ -2,7 +2,8 @@
 
 import { useAuthStore } from "@/store/authStore";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:5000/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_PROXY_URL ?? "/api/backend";
+const API_LABEL = process.env.NEXT_PUBLIC_API_URL ?? API_BASE_URL;
 const AUTH_STORAGE_KEY = "herahealth.auth";
 const AUTH_STORE_KEY = "auth";
 
@@ -113,7 +114,7 @@ async function apiRequest<T>(path: string, init: RequestInit = {}, token?: strin
       headers,
     });
   } catch {
-    throw new Error(`Unable to reach the API at ${API_BASE_URL}. Make sure the backend server is running.`);
+    throw new Error(`Unable to reach the API at ${API_LABEL}. Make sure the backend server is running.`);
   }
 
   const payload = (await response.json().catch(() => ({}))) as T & ApiErrorPayload;

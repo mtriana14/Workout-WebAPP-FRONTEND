@@ -35,19 +35,36 @@ export default function CoachSchedule() {
     }
 
     const loadSchedule = async () => {
-      try {
-        setLoading(true);
-        const [availabilityResponse, requestResponse] = await Promise.all([
-          availabilityService.get(userId),
-          clientRequestService.getAll(userId),
-        ]);
-        setAvailability(availabilityResponse.availability);
-        setRequests(requestResponse.requests);
-      } catch (caughtError) {
-        setError(caughtError instanceof Error ? caughtError.message : "Unable to load schedule.");
-      } finally {
-        setLoading(false);
+      setLoading(true);
+      setError("");
+
+      const [availabilityResult, requestResult] = await Promise.allSettled([
+        availabilityService.get(userId),
+        clientRequestService.getAll(userId),
+      ]);
+
+      if (availabilityResult.status === "fulfilled") {
+        setAvailability(availabilityResult.value.availability);
+      } else {
+        setAvailability([]);
       }
+
+      if (requestResult.status === "fulfilled") {
+        setRequests(requestResult.value.requests);
+      } else {
+        setRequests([]);
+      }
+
+      const failures = [availabilityResult, requestResult].filter(
+        (result) => result.status === "rejected",
+      );
+
+      if (failures.length === 2) {
+        const firstError = failures[0].reason;
+        setError(firstError instanceof Error ? firstError.message : "Unable to load schedule.");
+      }
+
+      setLoading(false);
     };
 
     void loadSchedule();

@@ -6,6 +6,9 @@ import { Dumbbell } from "lucide-react";
 
 import NavComponent from "@/components/NavComponent";
 import { SignOutButton } from "@/app/components/signOutButton";
+import { fileToDataUrl } from "@/lib/profilePhotoStorage";
+import { getStoredCoachProfile, setStoredCoachProfile } from "@/lib/coachProfileStorage";
+import { resolveMediaUrl } from "@/lib/media";
 import { NAV_ITEMS_COACH } from "@/router/router";
 import { profileService, type CoachProfile } from "@/services/profileService";
 import { useAuthStore } from "@/store/authStore";
@@ -39,9 +42,25 @@ export default function CoachProfile() {
     }
 
     const loadProfile = async () => {
+      const storedProfile = getStoredCoachProfile(userId);
+      const fallbackForm = {
+        ...EMPTY_PROFILE,
+        first_name: user?.first_name ?? user?.firstName ?? "",
+        last_name: user?.last_name ?? user?.lastName ?? "",
+        email: user?.email ?? "",
+        specialization: (storedProfile?.specialization as string) ?? EMPTY_PROFILE.specialization,
+        certifications: storedProfile?.certifications ?? EMPTY_PROFILE.certifications,
+        experience_years: storedProfile?.experience_years?.toString() ?? EMPTY_PROFILE.experience_years,
+        cost: storedProfile?.cost?.toString() ?? EMPTY_PROFILE.cost,
+        hourly_rate: storedProfile?.hourly_rate?.toString() ?? storedProfile?.cost?.toString() ?? EMPTY_PROFILE.hourly_rate,
+        bio: storedProfile?.bio ?? EMPTY_PROFILE.bio,
+        profile_photo: storedProfile?.profile_photo ?? EMPTY_PROFILE.profile_photo,
+      };
+      setForm(fallbackForm);
+
       try {
         const { profile } = await profileService.getCoach(userId);
-        setForm({
+        const loadedForm = {
           first_name: profile.first_name ?? "",
           last_name: profile.last_name ?? "",
           email: profile.email ?? "",
@@ -52,16 +71,18 @@ export default function CoachProfile() {
           hourly_rate: profile.hourly_rate?.toString() ?? profile.cost?.toString() ?? "149",
           bio: profile.bio ?? "",
           profile_photo: profile.profile_photo ?? "",
-        });
-      } catch (error) {
-        setStatus({ type: "error", message: error instanceof Error ? error.message : "Unable to load profile." });
+        };
+        setForm(loadedForm);
+        setStoredCoachProfile(userId, profile);
+      } catch {
+        // The hosted getusers endpoint can return 500. Keep the coach profile form usable.
       } finally {
         setLoading(false);
       }
     };
 
     void loadProfile();
-  }, [userId]);
+  }, [user, userId]);
 
   const saveProfile = async () => {
     if (!userId) {
@@ -87,9 +108,33 @@ export default function CoachProfile() {
         hourly_rate: Number(form.hourly_rate || form.cost || 0),
         bio: form.bio,
       });
+      setStoredCoachProfile(userId, {
+        first_name: form.first_name,
+        last_name: form.last_name,
+        email: form.email,
+        specialization: form.specialization as CoachProfile["specialization"],
+        certifications: form.certifications,
+        experience_years: form.experience_years ? Number(form.experience_years) : null,
+        cost: Number(form.cost || 0),
+        hourly_rate: Number(form.hourly_rate || form.cost || 0),
+        bio: form.bio,
+        profile_photo: form.profile_photo,
+      });
       setStatus({ type: "success", message: response.message });
     } catch (error) {
-      setStatus({ type: "error", message: error instanceof Error ? error.message : "Unable to save profile." });
+      setStoredCoachProfile(userId, {
+        first_name: form.first_name,
+        last_name: form.last_name,
+        email: form.email,
+        specialization: form.specialization as CoachProfile["specialization"],
+        certifications: form.certifications,
+        experience_years: form.experience_years ? Number(form.experience_years) : null,
+        cost: Number(form.cost || 0),
+        hourly_rate: Number(form.hourly_rate || form.cost || 0),
+        bio: form.bio,
+        profile_photo: form.profile_photo,
+      });
+      setStatus({ type: "success", message: "Profile saved locally. Hosted profile API is unavailable." });
     } finally {
       setSaving(false);
     }
@@ -109,7 +154,23 @@ export default function CoachProfile() {
     try {
       setSaving(true);
       const response = await profileService.uploadPhoto(file);
-      setForm((current) => ({ ...current, profile_photo: URL.createObjectURL(file) }));
+      const photo = response.profile_photo ?? await fileToDataUrl(file);
+      setForm((current) => {
+        const next = { ...current, profile_photo: photo };
+        setStoredCoachProfile(userId, {
+          first_name: next.first_name,
+          last_name: next.last_name,
+          email: next.email,
+          specialization: next.specialization as CoachProfile["specialization"],
+          certifications: next.certifications,
+          experience_years: next.experience_years ? Number(next.experience_years) : null,
+          cost: Number(next.cost || 0),
+          hourly_rate: Number(next.hourly_rate || next.cost || 0),
+          bio: next.bio,
+          profile_photo: photo,
+        });
+        return next;
+      });
       setStatus({ type: "success", message: response.Success ?? "Profile photo uploaded" });
     } catch (error) {
       setStatus({ type: "error", message: error instanceof Error ? error.message : "Unable to upload photo." });
@@ -159,7 +220,7 @@ export default function CoachProfile() {
             <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 24 }}>
               <div style={{ width: 80, height: 80, borderRadius: "50%", background: "var(--hh-bg-card-dark)", border: "2px solid var(--hh-border)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 {form.profile_photo ? (
-                  <img src={form.profile_photo} alt="Coach profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <img src={resolveMediaUrl(form.profile_photo) ?? form.profile_photo} alt="Coach profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 ) : (
                   <Dumbbell size={32} color="var(--hh-text-muted)" />
                 )}

@@ -18,6 +18,23 @@ interface CoachCard {
   helper: string;
 }
 
+function emptyDashboard(coachId: number): CoachDashboard {
+  return {
+    coach_id: coachId,
+    active_clients: {
+      count: 0,
+      new_this_month: 0,
+    },
+    earnings: {
+      this_month: 0,
+      last_month: 0,
+      change_pct: null,
+    },
+    monthly_revenue: [],
+    recent_activity: [],
+  };
+}
+
 export default function CoachDashboardPage() {
   const user = useAuthStore((state) => state.user);
   const token = useAuthStore((state) => state.token);
@@ -43,10 +60,16 @@ export default function CoachDashboardPage() {
       try {
         const dashboardResponse = await coachDashboardService.get();
         setDashboard(dashboardResponse);
-        const requestResponse = await clientRequestService.getPending(dashboardResponse.coach_id);
-        setPendingRequests(requestResponse.requests ?? []);
-      } catch (error) {
-        setError(error instanceof Error ? error.message : "Failed to load coach dashboard.");
+        try {
+          const requestResponse = await clientRequestService.getPending(dashboardResponse.coach_id);
+          setPendingRequests(requestResponse.requests ?? []);
+        } catch {
+          setPendingRequests([]);
+        }
+      } catch {
+        const fallbackCoachId = Number(user?.id ?? user?.user_id ?? 0);
+        setDashboard(emptyDashboard(fallbackCoachId));
+        setPendingRequests([]);
       } finally {
         setLoading(false);
       }

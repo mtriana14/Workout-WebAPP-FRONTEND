@@ -64,6 +64,7 @@ export const NAV_ITEMS_CLIENT: NavItem[] = [
   { label: "Find Coaches", icon: Search,          href: "/dashboards/client/coaches",   active: false },
   { label: "My Workouts",  icon: Activity,        href: "/dashboards/client/workouts",  active: false },
   { label: "My Meals",     icon: Utensils,        href: "/dashboards/client/meals",     active: false },
+  { label: "Chat",         icon: MessageCircle,   href: "/chat",                        active: false },
   { label: "Weekly Calendar", icon: CalendarDays, href: "/weekly-calendar",             active: false },
   { label: "Progress",     icon: TrendingUp,      href: "/dashboards/client/progress",  active: false },
   { label: "Progress Photos", icon: Images,       href: "/dashboards/client/progress/photos", active: false },

@@ -1,6 +1,7 @@
 import { useAuthStore } from "@/store/authStore";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api/";
+const BASE_URL = process.env.NEXT_PUBLIC_API_PROXY_URL ?? "/api/backend";
+const BACKEND_LABEL = process.env.NEXT_PUBLIC_API_URL ?? BASE_URL;
 const COMPANY_ID = process.env.NEXT_PUBLIC_COMPANY_ID ?? "1";
 
 interface RequestOptions {
@@ -84,7 +85,7 @@ export async function apiClient<T>(
       cache: "no-store",
     });
   } catch {
-    throw new Error(`Could not reach the backend at ${BASE_URL}. Make sure the Flask server is running.`);
+    throw new Error(`Could not reach the backend at ${BACKEND_LABEL}. Make sure the Flask server is running.`);
   }
 
   const json = await res.json().catch(() => null);

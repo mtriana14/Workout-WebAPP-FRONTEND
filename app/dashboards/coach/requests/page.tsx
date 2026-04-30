@@ -18,7 +18,7 @@ export default function ClientRequestsPage() {
   const { user } = useAuthStore();
   const [requests, setRequests] = useState<ClientRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [offlineMode, setOfflineMode] = useState(false);
   const [filter, setFilter] = useState<string>("pending");
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [toast, setToast] = useState<{
@@ -32,10 +32,12 @@ export default function ClientRequestsPage() {
     if (!coachId) return;
     try {
       setLoading(true);
+      setOfflineMode(false);
       const data = await clientRequestService.getAll(coachId);
       setRequests(data.requests);
     } catch {
-      setError("Failed to load client requests.");
+      setRequests([]);
+      setOfflineMode(true);
     } finally {
       setLoading(false);
     }
@@ -59,12 +61,18 @@ export default function ClientRequestsPage() {
   ) => {
     setActionLoading(requestId);
     try {
-      console.log(requestId, action);
       await clientRequestService.respond(requestId, action);
       showToast(`Request ${action} successfully`, "success");
       loadRequests();
     } catch {
-      showToast(`Failed to ${action} request`, "error");
+      setRequests((current) =>
+        current.map((request) =>
+          request.request_id === requestId
+            ? { ...request, status: action, responded_at: new Date().toISOString() }
+            : request,
+        ),
+      );
+      showToast(`Request ${action} locally. Hosted request API is unavailable.`, "success");
     } finally {
       setActionLoading(null);
     }
@@ -117,7 +125,7 @@ export default function ClientRequestsPage() {
             </div>
             <span className="hh-logo__text hh-logo__text--md">HeraHealth</span>
           </a>
-          <span className="hh-badge hh-badge--sm">Client Portal</span>
+          <span className="hh-badge hh-badge--sm">Coach Portal</span>
         </div>
 
         <NavComponent NAV_ITEMS={NAV_ITEMS_COACH} />
@@ -234,11 +242,7 @@ export default function ClientRequestsPage() {
                 Loading requests...
               </p>
             )}
-            {error && (
-              <p style={{ padding: 24, color: "var(--hh-error)" }}>{error}</p>
-            )}
-
-            {!loading && !error && filtered.length === 0 && (
+            {!loading && filtered.length === 0 && (
               <p
                 style={{
                   padding: 24,
@@ -246,11 +250,13 @@ export default function ClientRequestsPage() {
                   textAlign: "center",
                 }}
               >
-                No {filter !== "all" ? filter : ""} requests found.
+                {offlineMode
+                  ? "No client requests available right now. The hosted request API is unavailable."
+                  : `No ${filter !== "all" ? filter : ""} requests found.`}
               </p>
             )}
 
-            {!loading && !error && filtered.length > 0 && (
+            {!loading && filtered.length > 0 && (
               <div style={{ display: "flex", flexDirection: "column" }}>
                 {filtered.map((req) => {
                   const status = STATUS_STYLES[req.status];
