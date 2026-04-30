@@ -23,17 +23,17 @@ export default function UsersPage() {
   const loadUsers = async () => {
     try {
       const data = await userService.getAll();
-      setUsers(data);
+      setUsers((data as any).users ?? []);
     } catch (error) {
       setError("Failed to load users.");
     } finally {
       setLoading(false);
     }
   };
-  
+
   useEffect(() => {
-      loadUsers();
-      console.log(users);
+    loadUsers();
+    console.log(users);
   }, []);
 
   const filtered = users.filter((u) =>

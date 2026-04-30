@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ClipboardList, DollarSign, Dumbbell, UserCheck, type LucideIcon } from "lucide-react";
+import {
+  ClipboardList,
+  DollarSign,
+  Dumbbell,
+  UserCheck,
+  type LucideIcon,
+} from "lucide-react";
 
 import NavComponent from "@/components/NavComponent";
 import { SignOutButton } from "@/app/components/signOutButton";
@@ -10,7 +16,6 @@ import { coachService } from "@/services/coachService";
 import { exerciseService } from "@/services/exerciseService";
 import { paymentService } from "@/services/paymentService";
 import { useAuthStore } from "@/store/authStore";
-
 
 interface AdminStats {
   totalCoaches: number;
@@ -39,20 +44,34 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     const loadStats = async () => {
       try {
-        const [coachResponse, exerciseResponse, paymentResponse] = await Promise.all([
-          coachService.getAll(),
-          exerciseService.getAll(),
-          paymentService.getStats(),
-        ]);
+        const [coachResponse, exerciseResponse, paymentResponse] =
+          await Promise.allSettled([
+            coachService.getAll(),
+            exerciseService.getAll(),
+            paymentService.getStats(),
+          ]);
 
-        const coaches = coachResponse.coaches ?? [];
-        const exercises = exerciseResponse.exercises ?? [];
+        const coaches =
+          coachResponse.status === "fulfilled"
+            ? (coachResponse.value.coaches ?? [])
+            : [];
+        const exercises =
+          exerciseResponse.status === "fulfilled"
+            ? (exerciseResponse.value.exercises ?? [])
+            : [];
+        const revenue =
+          paymentResponse.status === "fulfilled"
+            ? (paymentResponse.value.total_revenue ??
+              paymentResponse.value.summary?.total_revenue ??
+              0)
+            : 0;
 
         setStats({
           totalCoaches: coaches.length,
-          pendingCoaches: coaches.filter((coach) => coach.status === "pending").length,
+          pendingCoaches: coaches.filter((coach) => coach.status === "pending")
+            .length,
           totalExercises: exercises.length,
-          totalRevenue: paymentResponse.total_revenue ?? paymentResponse.summary.total_revenue ?? 0,
+          totalRevenue: revenue,
         });
       } catch (error) {
         console.error("Failed to load admin dashboard", error);
@@ -120,7 +139,9 @@ export default function AdminDashboardPage() {
         <div className="hh-dash-content">
           <div>
             <h1 className="hh-page-title">ADMIN DASHBOARD</h1>
-            <p className="hh-page-subtitle">Welcome back, {user?.name ?? "Admin"}.</p>
+            <p className="hh-page-subtitle">
+              Welcome back, {user?.name ?? "Admin"}.
+            </p>
           </div>
 
           <div className="hh-stats-grid">
@@ -141,7 +162,13 @@ export default function AdminDashboardPage() {
           <div className="hh-bottom-row">
             <div className="hh-card" style={{ flex: 2 }}>
               <h2 className="hh-panel-heading">Quick Actions</h2>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                  gap: 12,
+                }}
+              >
                 <a href="/dashboards/admin/coaches" className="hh-nav-link">
                   Manage Coaches
                 </a>
@@ -159,8 +186,14 @@ export default function AdminDashboardPage() {
 
             <div className="hh-card" style={{ flex: 1 }}>
               <h2 className="hh-panel-heading">Status</h2>
-              <p className="hh-card__delta hh-text-muted">API-backed admin summary loaded from coaches, exercises, and payments.</p>
-              <p className="hh-card__delta hh-text-muted" style={{ marginTop: 12 }}>
+              <p className="hh-card__delta hh-text-muted">
+                API-backed admin summary loaded from coaches, exercises, and
+                payments.
+              </p>
+              <p
+                className="hh-card__delta hh-text-muted"
+                style={{ marginTop: 12 }}
+              >
                 Pending coach reviews: {loading ? "..." : stats.pendingCoaches}
               </p>
             </div>
