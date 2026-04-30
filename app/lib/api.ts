@@ -548,10 +548,10 @@ export function fetchAdminPendingCoaches(token: string) {
 
 export function processAdminCoach(token: string, coachId: number, action: "approved" | "rejected") {
   return apiRequest<{ message: string }>(
-    `/admin/coaches/${coachId}/process`,
+    `/admin/coaches/${coachId}/status`,
     {
       method: "PUT",
-      body: JSON.stringify({ action }),
+      body: JSON.stringify({ status: action }),
     },
     token,
   );

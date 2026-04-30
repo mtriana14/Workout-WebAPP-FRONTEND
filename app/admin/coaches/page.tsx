@@ -7,7 +7,6 @@ import { AdminPortalShell } from "@/app/components/adminPortalShell";
 import {
   disableAdminCoach,
   fetchAdminCoaches,
-  fetchAdminPendingCoaches,
   getStoredAuthToken,
   processAdminCoach,
   reactivateAdminCoach,
@@ -21,7 +20,6 @@ const COACH_FILTERS: CoachFilter[] = ["all", "pending", "approved", "suspended",
 
 export default function AdminCoachesPage() {
   const [coaches, setCoaches] = useState<AdminCoachRecord[]>([]);
-  const [pendingCoaches, setPendingCoaches] = useState<AdminCoachRecord[]>([]);
   const [filter, setFilter] = useState<CoachFilter>("all");
   const [search, setSearch] = useState("");
   const [error, setError] = useState("");
@@ -39,12 +37,8 @@ export default function AdminCoachesPage() {
     try {
       setError("");
       setIsLoading(true);
-      const [allResponse, pendingResponse] = await Promise.all([
-        fetchAdminCoaches(token),
-        fetchAdminPendingCoaches(token),
-      ]);
+      const allResponse = await fetchAdminCoaches(token);
       setCoaches(allResponse.coaches);
-      setPendingCoaches(pendingResponse.pending_coaches);
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "Unable to load coaches.");
     } finally {
@@ -99,7 +93,7 @@ export default function AdminCoachesPage() {
       <div className="hh-stats-grid">
         {[
           { label: "Total Coaches", value: coaches.length, icon: Briefcase },
-          { label: "Pending Review", value: pendingCoaches.length, icon: BadgeCheck },
+          { label: "Pending Review", value: coaches.filter((coach) => coach.status === "pending").length, icon: BadgeCheck },
           { label: "Approved", value: coaches.filter((coach) => coach.status === "approved").length, icon: BadgeCheck },
           { label: "Suspended", value: coaches.filter((coach) => coach.status === "suspended").length, icon: UserX },
         ].map((card) => (
