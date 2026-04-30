@@ -18,7 +18,15 @@ import {
   updateCurrentProfile,
 } from "@/app/lib/api";
 
-export const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
+export const WEEK_DAYS = [
+  "Mon",
+  "Tue",
+  "Wed",
+  "Thu",
+  "Fri",
+  "Sat",
+  "Sun",
+] as const;
 export type WeekDay = (typeof WEEK_DAYS)[number];
 
 export interface MemberProfile {
@@ -113,15 +121,18 @@ export const DEFAULT_DASHBOARD: DashboardSettings = {
   recoveryFocus: "",
 };
 
-const MemberPortalContext = createContext<MemberPortalContextValue | null>(null);
+const MemberPortalContext = createContext<MemberPortalContextValue | null>(
+  null,
+);
 
 function sanitizeTrainingDays(trainingDays: unknown): WeekDay[] {
   if (!Array.isArray(trainingDays)) {
     return [];
   }
 
-  const safeDays = trainingDays.filter((day): day is WeekDay =>
-    typeof day === "string" && WEEK_DAYS.includes(day as WeekDay),
+  const safeDays = trainingDays.filter(
+    (day): day is WeekDay =>
+      typeof day === "string" && WEEK_DAYS.includes(day as WeekDay),
   );
 
   return safeDays;
@@ -154,13 +165,39 @@ function mergeDashboard(savedDashboard: unknown) {
 
 export function MemberPortalProvider({ children }: PropsWithChildren) {
   const [profile, setProfile] = useState<MemberProfile>(DEFAULT_PROFILE);
-  const [dashboard, setDashboard] = useState<DashboardSettings>(DEFAULT_DASHBOARD);
+  const [dashboard, setDashboard] =
+    useState<DashboardSettings>(DEFAULT_DASHBOARD);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState("client");
 
   async function refreshPortal() {
-    const session = getStoredAuthSession();
+    let session = getStoredAuthSession();
+
+    if (!session?.token) {
+      try {
+        const raw = window.localStorage.getItem("auth");
+        const parsed = raw ? JSON.parse(raw) : null;
+        const zustandToken = parsed?.token ?? null;
+        const zustandUser = parsed?.user ?? null;
+        if (zustandToken && zustandUser) {
+          session = {
+            token: zustandToken,
+            user: {
+              id: zustandUser.id,
+              userId: zustandUser.id,
+              firstName: zustandUser.first_name,
+              lastName: zustandUser.last_name,
+              name: `${zustandUser.first_name} ${zustandUser.last_name}`,
+              email: zustandUser.email,
+              role: zustandUser.role,
+            },
+          };
+        }
+      } catch {
+        // ignore
+      }
+    }
 
     if (!session?.token) {
       setProfile(DEFAULT_PROFILE);
@@ -184,16 +221,20 @@ export function MemberPortalProvider({ children }: PropsWithChildren) {
       setUserRole(profileResponse.user.role);
       setIsAuthenticated(true);
     } catch {
-      console.warn("Could not fetch profile APIs. Falling back to session data.");
-      
-      const user = session.user as any; 
-      
-      setProfile(mergeProfile({
-        firstName: user.firstName || user.first_name || "Coach",
-        lastName: user.lastName || user.last_name || "",
-        email: user.email,
-        role: user.role
-      }));
+      console.warn(
+        "Could not fetch profile APIs. Falling back to session data.",
+      );
+
+      const user = session.user as any;
+
+      setProfile(
+        mergeProfile({
+          firstName: user.firstName || user.first_name || "Coach",
+          lastName: user.lastName || user.last_name || "",
+          email: user.email,
+          role: user.role,
+        }),
+      );
       setDashboard(DEFAULT_DASHBOARD);
       setUserRole(user.role || "client");
       setIsAuthenticated(true);
@@ -239,7 +280,8 @@ export function MemberPortalProvider({ children }: PropsWithChildren) {
     profile,
     dashboard,
     replaceProfile: setProfile,
-    updateProfile: (patch) => setProfile((current) => ({ ...current, ...patch })),
+    updateProfile: (patch) =>
+      setProfile((current) => ({ ...current, ...patch })),
     replaceDashboard: (nextDashboard) =>
       setDashboard({
         ...nextDashboard,
@@ -258,7 +300,8 @@ export function MemberPortalProvider({ children }: PropsWithChildren) {
     refreshPortal,
     logout,
     displayName: `${profile.firstName} ${profile.lastName}`.trim(),
-    initials: `${profile.firstName[0] ?? ""}${profile.lastName[0] ?? ""}`.toUpperCase(),
+    initials:
+      `${profile.firstName[0] ?? ""}${profile.lastName[0] ?? ""}`.toUpperCase(),
     isAuthenticated,
     isLoading,
     userRole,
