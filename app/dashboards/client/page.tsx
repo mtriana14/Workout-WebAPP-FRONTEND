@@ -7,13 +7,15 @@ import { SignOutButton } from "@/app/components/signOutButton";
 import { NAV_ITEMS_CLIENT } from "@/router/router";
 import { clientDashboardService, MyCoach, ClientWorkoutPlan, ClientMealPlan } from "@/services/clientDashboardService";
 import { useAuthStore } from "@/store/authStore";
-
 import { Dumbbell } from "lucide-react";
+import { PendingRequest } from "@/types/PendingRequest";
 
+ 
 export default function ClientDashboardPage() {
   const router = useRouter();
   const { token, user, hasHydrated } = useAuthStore();
   const [myCoach, setMyCoach] = useState<MyCoach | null>(null);
+  const [pendingRequest, setPendingRequest] = useState<PendingRequest | null>(null);
   const [workoutPlans, setWorkoutPlans] = useState<ClientWorkoutPlan[]>([]);
   const [mealPlans, setMealPlans] = useState<ClientMealPlan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,9 +25,7 @@ export default function ClientDashboardPage() {
   const hasAuth = Boolean(token && user && userId);
 
   useEffect(() => {
-    if (!hasHydrated) {
-      return;
-    }
+    if (!hasHydrated) return;
 
     if (!hasAuth) {
       setLoading(false);
@@ -35,16 +35,17 @@ export default function ClientDashboardPage() {
 
     const loadData = async () => {
       const resolvedUserId = userId as number;
-
       try {
-        const [coachData, workoutData, mealData] = await Promise.all([
+        const [coachData, workoutData, mealData, pendingData] = await Promise.all([
           clientDashboardService.getMyCoach(resolvedUserId),
           clientDashboardService.getMyWorkoutPlans(resolvedUserId),
           clientDashboardService.getMyMealPlans(resolvedUserId),
+          clientDashboardService.getPendingRequest(resolvedUserId),
         ]);
         setMyCoach(coachData.coach);
         setWorkoutPlans(workoutData.workout_plans);
         setMealPlans(mealData.meal_plans);
+        setPendingRequest(pendingData.pending_request);
       } catch (err) {
         console.error("Failed to load dashboard data", err);
       } finally {
@@ -69,9 +70,7 @@ export default function ClientDashboardPage() {
     );
   }
 
-  if (!hasAuth) {
-    return null;
-  }
+  if (!hasAuth) return null;
 
   const activePlans = workoutPlans.filter((p) => p.status === "active").length;
   const activeMeals = mealPlans.filter((p) => p.status === "active").length;
@@ -89,9 +88,7 @@ export default function ClientDashboardPage() {
           </a>
           <span className="hh-badge hh-badge--sm">Client Portal</span>
         </div>
-
         <NavComponent NAV_ITEMS={NAV_ITEMS_CLIENT} />
-
         <div className="hh-sidebar__footer">
           <SignOutButton className="hh-sidebar__back hh-sidebar__logout hh-sidebar__logout-button">
             Sign Out
@@ -114,8 +111,17 @@ export default function ClientDashboardPage() {
               <p style={{ fontSize: 12, color: "var(--hh-text-muted)", margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>
                 My Coach
               </p>
-              <p style={{ fontSize: 20, fontWeight: 700, margin: "8px 0 0", color: myCoach ? "var(--hh-text-green)" : "var(--hh-text-muted)" }}>
-                {loading ? "..." : myCoach ? myCoach.name : "None"}
+              <p style={{
+                fontSize: 20,
+                fontWeight: 700,
+                margin: "8px 0 0",
+                color: myCoach
+                  ? "var(--hh-text-green)"
+                  : pendingRequest
+                  ? "var(--hh-accent)"
+                  : "var(--hh-text-muted)"
+              }}>
+                {loading ? "..." : myCoach ? myCoach.name : pendingRequest ? "Pending..." : "None"}
               </p>
             </div>
             <div className="hh-card" style={{ padding: 24 }}>
@@ -140,7 +146,7 @@ export default function ClientDashboardPage() {
           <div className="hh-card" style={{ padding: 0, overflow: "hidden" }}>
             <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--hh-border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>My Coach</h3>
-              {!myCoach && (
+              {!myCoach && !pendingRequest && (
                 <a href="/dashboards/client/coaches" style={{ fontSize: 13, color: "var(--hh-accent)", textDecoration: "none", fontWeight: 500 }}>
                   Find a Coach →
                 </a>
@@ -159,6 +165,36 @@ export default function ClientDashboardPage() {
                     <p style={{ margin: "4px 0 0", fontSize: 13, color: "var(--hh-text-muted)" }}>{myCoach.specialization || "Fitness Coach"}</p>
                     <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--hh-text-muted)" }}>
                       Since {new Date(myCoach.since).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              ) : pendingRequest ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                  <div style={{ width: 56, height: 56, borderRadius: "50%", backgroundColor: "var(--hh-border)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>
+                    ⏳
+                  </div>
+                  <div>
+                    <p style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>{pendingRequest.coach_name}</p>
+                    <p style={{ margin: "4px 0 0", fontSize: 13, color: "var(--hh-text-muted)" }}>
+                      {pendingRequest.coach_specialization || "Fitness Coach"}
+                    </p>
+                    <span style={{
+                      display: "inline-block",
+                      marginTop: 6,
+                      padding: "2px 10px",
+                      backgroundColor: "rgba(var(--hh-accent-rgb), 0.12)",
+                      border: "1px solid var(--hh-accent)",
+                      borderRadius: 99,
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: "var(--hh-accent)",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em"
+                    }}>
+                      Request Pending
+                    </span>
+                    <p style={{ margin: "6px 0 0", fontSize: 12, color: "var(--hh-text-muted)" }}>
+                      Sent {new Date(pendingRequest.requested_at).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
@@ -215,6 +251,7 @@ export default function ClientDashboardPage() {
               )}
             </div>
           </div>
+
         </div>
       </main>
     </div>

@@ -1,5 +1,5 @@
 export interface CoachItem {
-  id:             number;
+  coach_id:       number;
   user_id:        number;
   name:           string;
   email:          string;

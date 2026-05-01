@@ -1,6 +1,6 @@
 import { LoginCredentials, LoginResponse } from "@/types/auth";
+ 
 import { apiClient } from "@/lib/api";
-
  
 
 export const authService = {

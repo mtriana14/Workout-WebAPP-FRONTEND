@@ -16,7 +16,7 @@ interface MessageResponse {
 export const coachService = {
   // Get all coaches (admin view)
   getAll: () =>
-    apiClient<CoachesResponse>("admin/coaches", {
+    apiClient<CoachItem[]>("admin/coaches", {
       method: "GET",
     }),
 

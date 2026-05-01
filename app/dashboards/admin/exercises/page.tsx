@@ -7,7 +7,7 @@ import { NAV_ITEMS_ADMIN } from "@/router/router";
 import { exerciseService, Exercise, CreateExerciseData } from "@/services/exerciseService";
 
 const LOGO_ICON =
-  "https://www.figma.com/api/mcp/asset/b62d16c1-9ace-4db9-ac52-c4c34a9bdd3e";
+  "";
 
 const MUSCLE_GROUPS = [
   "chest", "back", "shoulders", "arms", "legs", "core", "glutes", "full_body"

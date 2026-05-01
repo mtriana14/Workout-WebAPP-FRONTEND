@@ -7,7 +7,7 @@ import { NAV_ITEMS_ADMIN } from "@/router/router";
 import { PaymentRecord, paymentService, PaymentSummary } from "@/services/paymentService";
  
 const LOGO_ICON =
-  "https://www.figma.com/api/mcp/asset/b62d16c1-9ace-4db9-ac52-c4c34a9bdd3e";
+  "";
 
 const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
   completed: { bg: "rgba(34, 197, 94, 0.1)",  color: "#22c55e" },

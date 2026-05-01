@@ -7,8 +7,7 @@ import { NAV_ITEMS_ADMIN } from "@/router/router";
 import { coachService } from "@/services/coachService";
 import { CoachItem } from "@/types/CoachItem";
 
-const LOGO_ICON =
-  "https://www.figma.com/api/mcp/asset/b62d16c1-9ace-4db9-ac52-c4c34a9bdd3e";
+const LOGO_ICON ="";
 
 const STATUS_STYLES: Record<string, { bg: string; color: string; label: string }> = {
   approved: { bg: "rgba(34, 197, 94, 0.1)",  color: "var(--hh-text-green)", label: "Approved" },
@@ -29,7 +28,8 @@ export default function CoachesPage() {
     try {
       setLoading(true);
       const data = await coachService.getAll();
-      setCoaches(data.coaches);
+      console.log(data);
+      setCoaches(data);
     } catch {
       setError("Failed to load coaches.");
     } finally {
@@ -106,7 +106,7 @@ export default function CoachesPage() {
         <div className="hh-sidebar__header">
           <a href="/" className="hh-logo">
             <div className="hh-logo__icon hh-logo__icon--md">
-              <img src={LOGO_ICON} alt="" width={16} height={16} />
+              {/* <img src={LOGO_ICON} alt="" width={16} height={16} /> */}
             </div>
             <span className="hh-logo__text hh-logo__text--md">HeraHealth</span>
           </a>
@@ -217,7 +217,7 @@ export default function CoachesPage() {
                       </td>
                     </tr>
                   )}
-                  {filtered.map((c) => {
+                  {filtered.map((c : any) => {
                     const status = STATUS_STYLES[c.status] ?? {
                       bg: "transparent",
                       color: "var(--hh-text-muted)",
@@ -226,7 +226,7 @@ export default function CoachesPage() {
                     const isLoading = actionLoading === c.id;
 
                     return (
-                      <tr key={c.id} style={{ borderBottom: "1px solid var(--hh-border)" }}>
+                      <tr key={c.coach_id} style={{ borderBottom: "1px solid var(--hh-border)" }}>
                         <td style={{ padding: "14px 16px", fontSize: 14, color: "var(--hh-text-primary)" }}>
                           {c.name}
                         </td>

@@ -9,7 +9,7 @@ import { progressService, type ProgressEntry, type ProgressSummary } from "@/ser
 import { useAuthStore } from "@/store/authStore";
 
 const LOGO_ICON =
-  "https://www.figma.com/api/mcp/asset/b62d16c1-9ace-4db9-ac52-c4c34a9bdd3e";
+  "";
 
 export default function ProgressPage() {
   const { user } = useAuthStore();

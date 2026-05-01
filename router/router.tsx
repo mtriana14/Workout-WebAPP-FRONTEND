@@ -59,4 +59,5 @@ export const NAV_ITEMS_CLIENT: NavItem[] = [
   { label: "My Workouts",  icon: Activity,        href: "/dashboards/client/workouts",  active: false },
   { label: "My Meals",     icon: Utensils,        href: "/dashboards/client/meals",     active: false },
   { label: "Progress",     icon: TrendingUp,      href: "/dashboards/client/progress",  active: false },
+  { label: "become-coach", icon: User,            href: "/dashboards/client/become-coach", active: false },
 ];

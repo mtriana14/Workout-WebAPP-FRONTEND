@@ -57,11 +57,11 @@ export default function AvailabilityPage() {
     const loadAvailability = async () => {
       if (!userId) return;
       try {
-        const data = await availabilityService.get(userId);
+        const data = await availabilityService.getByUser(userId);
 
         // Convert API response to schedule format
         const newSchedule = { ...DEFAULT_SCHEDULE };
-        data.availability.forEach((slot) => {
+        data.availability.forEach((slot: AvailabilitySlot) => {
           const day = slot.day_of_week as DayOfWeek;
           newSchedule[day] = {
             enabled: slot.is_available,

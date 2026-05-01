@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/api";
+import { PendingRequest } from "@/types/PendingRequest";
 
 // ==================== TYPES ====================
 
@@ -74,10 +75,13 @@ export const clientDashboardService = {
 
   // Send request to coach
   sendRequest: (userId: number, coachId: number, message?: string) =>
-    apiClient<{ message: string; request_id: number }>(`client/${userId}/requests`, {
-      method: "POST",
-      body: { coach_id: coachId, message },
-    }),
+    apiClient<{ message: string; request_id: number }>(
+      `client/${userId}/requests`,
+      {
+        method: "POST",
+        body: { coach_id: coachId, message },
+      },
+    ),
 
   // Get my requests
   getMyRequests: (userId: number) =>
@@ -93,13 +97,26 @@ export const clientDashboardService = {
 
   // Get my workout plans
   getMyWorkoutPlans: (userId: number) =>
-    apiClient<{ workout_plans: ClientWorkoutPlan[] }>(`client/${userId}/workout-plans`, {
-      method: "GET",
-    }),
+    apiClient<{ workout_plans: ClientWorkoutPlan[] }>(
+      `client/${userId}/workout-plans`,
+      {
+        method: "GET",
+      },
+    ),
 
   // Get my meal plans
   getMyMealPlans: (userId: number) =>
     apiClient<{ meal_plans: ClientMealPlan[] }>(`client/${userId}/meal-plans`, {
       method: "GET",
     }),
+
+  // Get my active workout plans
+  // Get pending coaching request
+  getPendingRequest: (userId: number) =>
+    apiClient<{ pending_request: PendingRequest | null }>(
+      `client/${userId}/pending-request`,
+      {
+        method: "GET",
+      },
+    ),
 };
