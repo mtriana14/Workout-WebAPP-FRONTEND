@@ -45,7 +45,7 @@ export default function AdminDashboardPage() {
           paymentService.getStats(),
         ]);
 
-        const coaches = coachResponse.coaches ?? [];
+        const coaches = coachResponse ?? [];
         const exercises = exerciseResponse.exercises ?? [];
 
         setStats({
