@@ -1,18 +1,18 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  LayoutDashboard, 
+  LayoutDashboard,
   Users,
-  UserSquare2, 
-  Dumbbell, 
-  CreditCard, 
-  Calendar, 
-  Contact2, 
-  ClipboardList, 
+  UserSquare2,
+  Dumbbell,
+  CreditCard,
+  Calendar,
+  Contact2,
+  ClipboardList,
   MessageCircle,
-  Search, 
+  Search,
   Settings,
-  Activity, 
-  Utensils, 
+  Activity,
+  Utensils,
   TrendingUp,
   Bell,
   User,
@@ -20,7 +20,8 @@ import {
   Images,
   ReceiptText,
   Star,
-  CalendarDays
+  CalendarDays,
+  Award
 } from "lucide-react";
 
 export interface NavItem {
@@ -69,5 +70,6 @@ export const NAV_ITEMS_CLIENT: NavItem[] = [
   { label: "Progress",     icon: TrendingUp,      href: "/dashboards/client/progress",  active: false },
   { label: "Progress Photos", icon: Images,       href: "/dashboards/client/progress/photos", active: false },
   { label: "My Invoices",  icon: ReceiptText,     href: "/my-invoices",                 active: false },
-  { label: "Leave Review", icon: Star,            href: "/leave-a-review",              active: false },
+  { label: "Leave Review",    icon: Star,            href: "/leave-a-review",              active: false },
+  { label: "Become a Coach", icon: Award,           href: "/become-coach",                active: false },
 ];

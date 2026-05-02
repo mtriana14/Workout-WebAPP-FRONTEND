@@ -6,6 +6,7 @@ export interface CoachReview {
   coach_id: number;
   rating: number;
   comment: string | null;
+  reviewer_name: string | null;
   created_at: string | null;
 }
 

@@ -7,6 +7,7 @@ import { SignOutButton } from "@/app/components/signOutButton";
 import { NAV_ITEMS_COACH } from "@/router/router";
 import { clientRequestService } from "@/services/ClientRequest";
 import { workoutPlanService } from "@/services/workoutPlanService";
+import { exerciseService, Exercise } from "@/services/exerciseService";
 import { useAuthStore } from "@/store/authStore";
 
 interface CoachClientOption {
@@ -14,30 +15,13 @@ interface CoachClientOption {
   name: string;
 }
 
-const EXERCISE_LIBRARY = [
-  { id: "e1",  name: "Bench Press",        muscleGroup: "Chest",     equipment: "Barbell"    },
-  { id: "e2",  name: "Squat",              muscleGroup: "Legs",      equipment: "Barbell"    },
-  { id: "e3",  name: "Deadlift",           muscleGroup: "Back",      equipment: "Barbell"    },
-  { id: "e4",  name: "Overhead Press",     muscleGroup: "Shoulders", equipment: "Barbell"    },
-  { id: "e5",  name: "Pull Up",            muscleGroup: "Back",      equipment: "Bodyweight" },
-  { id: "e6",  name: "Dumbbell Curl",      muscleGroup: "Arms",      equipment: "Dumbbell"   },
-  { id: "e7",  name: "Tricep Pushdown",    muscleGroup: "Arms",      equipment: "Cable"      },
-  { id: "e8",  name: "Leg Press",          muscleGroup: "Legs",      equipment: "Machine"    },
-  { id: "e9",  name: "Incline DB Press",   muscleGroup: "Chest",     equipment: "Dumbbell"   },
-  { id: "e10", name: "Cable Row",          muscleGroup: "Back",      equipment: "Cable"      },
-  { id: "e11", name: "Lateral Raise",      muscleGroup: "Shoulders", equipment: "Dumbbell"   },
-  { id: "e12", name: "Leg Curl",           muscleGroup: "Legs",      equipment: "Machine"    },
-  { id: "e13", name: "Push Up",            muscleGroup: "Chest",     equipment: "Bodyweight" },
-  { id: "e14", name: "Plank",              muscleGroup: "Core",      equipment: "Bodyweight" },
-  { id: "e15", name: "Russian Twist",      muscleGroup: "Core",      equipment: "Bodyweight" },
-  { id: "e16", name: "Hip Thrust",         muscleGroup: "Glutes",    equipment: "Barbell"    },
-  { id: "e17", name: "Romanian Deadlift",  muscleGroup: "Glutes",    equipment: "Barbell"    },
-  { id: "e18", name: "Calf Raise",         muscleGroup: "Legs",      equipment: "Machine"    },
-];
-
-const MUSCLE_GROUPS = ["All", "Chest", "Back", "Legs", "Shoulders", "Arms", "Core", "Glutes"];
-const EQUIPMENT_TYPES = ["All", "Barbell", "Dumbbell", "Cable", "Machine", "Bodyweight"];
 const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+function humanize(str: string) {
+  return str.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+const isDefined = (v: string | undefined): v is string => v !== undefined && v !== null;
 
 type Exercise = { name: string; sets: number; reps: string; rest: string };
 
@@ -55,7 +39,9 @@ export default function CoachWorkouts() {
   const [isSaving, setIsSaving] = useState(false);
   const [loadingClients, setLoadingClients] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
-  const [exercises, setExercises] = useState<Exercise[]>([
+  const [library, setLibrary] = useState<Exercise[]>([]);
+  const [loadingLibrary, setLoadingLibrary] = useState(true);
+  const [exercises, setExercises] = useState<{ name: string; sets: number; reps: string; rest: string }[]>([
     { name: "Bench Press",      sets: 4, reps: "6-8",   rest: "90s" },
     { name: "Overhead Press",   sets: 3, reps: "8-10",  rest: "90s" },
     { name: "Incline DB Press", sets: 3, reps: "10-12", rest: "60s" },
@@ -106,12 +92,22 @@ export default function CoachWorkouts() {
     return () => window.clearTimeout(timeoutId);
   }, [toast]);
 
+  useEffect(() => {
+    exerciseService.getAll()
+      .then((d) => setLibrary(d.exercises))
+      .catch(() => setLibrary([]))
+      .finally(() => setLoadingLibrary(false));
+  }, []);
+
   const selectedClient = clients.find((c) => String(c.id) === selectedClientId);
 
-  const filtered = EXERCISE_LIBRARY.filter((e) => {
+  const muscleGroups   = ["All", ...Array.from(new Set(library.map((e) => e.muscle_group).filter(isDefined)))];
+  const equipmentTypes = ["All", ...Array.from(new Set(library.map((e) => e.equipment_type).filter(isDefined)))];
+
+  const filtered = library.filter((e) => {
     const matchSearch    = e.name.toLowerCase().includes(search.toLowerCase());
-    const matchMuscle    = muscleFilter    === "All" || e.muscleGroup === muscleFilter;
-    const matchEquipment = equipmentFilter === "All" || e.equipment   === equipmentFilter;
+    const matchMuscle    = muscleFilter    === "All" || e.muscle_group   === muscleFilter;
+    const matchEquipment = equipmentFilter === "All" || e.equipment_type === equipmentFilter;
     return matchSearch && matchMuscle && matchEquipment;
   });
 
@@ -394,7 +390,7 @@ export default function CoachWorkouts() {
                   MUSCLE GROUP
                 </p>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                  {MUSCLE_GROUPS.map((mg) => (
+                  {muscleGroups.map((mg) => (
                     <button
                       key={mg}
                       onClick={() => setMuscleFilter(mg)}
@@ -409,7 +405,7 @@ export default function CoachWorkouts() {
                         transition: "all 0.15s",
                       }}
                     >
-                      {mg}
+                      {humanize(mg)}
                     </button>
                   ))}
                 </div>
@@ -421,7 +417,7 @@ export default function CoachWorkouts() {
                   EQUIPMENT
                 </p>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                  {EQUIPMENT_TYPES.map((eq) => (
+                  {equipmentTypes.map((eq) => (
                     <button
                       key={eq}
                       onClick={() => setEquipmentFilter(eq)}
@@ -436,16 +432,20 @@ export default function CoachWorkouts() {
                         transition: "all 0.15s",
                       }}
                     >
-                      {eq}
+                      {humanize(eq)}
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Results count */}
-              <p style={{ fontSize: "var(--hh-fs-12)", color: "var(--hh-text-muted)" }}>
-                {filtered.length} exercise{filtered.length !== 1 ? "s" : ""} found
-              </p>
+              {loadingLibrary ? (
+                <p style={{ fontSize: "var(--hh-fs-12)", color: "var(--hh-text-muted)" }}>Loading exercises...</p>
+              ) : (
+                <p style={{ fontSize: "var(--hh-fs-12)", color: "var(--hh-text-muted)" }}>
+                  {filtered.length} exercise{filtered.length !== 1 ? "s" : ""} found
+                </p>
+              )}
 
               {/* Exercise list */}
               <div style={{ display: "flex", flexDirection: "column", gap: 4, overflowY: "auto", maxHeight: 380 }}>
@@ -453,7 +453,7 @@ export default function CoachWorkouts() {
                   const alreadyAdded = exercises.some((e) => e.name === ex.name);
                   return (
                     <div
-                      key={ex.id}
+                      key={ex.e_id}
                       onClick={() => addExercise(ex.name)}
                       style={{
                         display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -474,7 +474,7 @@ export default function CoachWorkouts() {
                           {ex.name}
                         </div>
                         <div style={{ fontSize: "var(--hh-fs-12)", color: "var(--hh-text-muted)" }}>
-                          {ex.muscleGroup} · {ex.equipment}
+                          {humanize(ex.muscle_group ?? "")} · {humanize(ex.equipment_type ?? "")}
                         </div>
                       </div>
                       {alreadyAdded ? (
@@ -485,7 +485,7 @@ export default function CoachWorkouts() {
                     </div>
                   );
                 })}
-                {filtered.length === 0 && (
+                {!loadingLibrary && filtered.length === 0 && (
                   <p style={{ fontSize: "var(--hh-fs-14)", color: "var(--hh-text-muted)", padding: "12px 0" }}>
                     No exercises match your filters.
                   </p>

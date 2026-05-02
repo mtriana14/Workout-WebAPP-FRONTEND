@@ -1,55 +1,173 @@
 "use client";
-import { useState } from "react";
-import { Send, User as UserIcon } from "lucide-react";
+
+import { useEffect, useRef, useState } from "react";
+import { Send } from "lucide-react";
+import { io, Socket } from "socket.io-client";
 import { MemberPortalShell } from "@/app/components/memberPortalShell";
+import { chatService, ChatMessage, Conversation } from "@/services/chatService";
+import { clientDashboardService } from "@/services/clientDashboardService";
+import { useAuthStore } from "@/store/authStore";
 
-export default function ChatPage() {
-  const [message, setMessage] = useState("");
-  const [chat, setChat] = useState([
-    { sender: "coach", text: "Hey! How are you feeling after yesterday's leg day?" },
-    { sender: "user", text: "A bit sore, but feeling strong! Got my protein in." }
-  ]);
+const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
-  function handleSend(e: React.FormEvent) {
-    e.preventDefault();
-    if (!message) return;
-    setChat([...chat, { sender: "user", text: message }]);
-    setMessage("");
-    // Fake coach reply
-    setTimeout(() => {
-      setChat(prev => [...prev, { sender: "coach", text: "Love to hear it. Make sure to stretch tonight!" }]);
-    }, 1500);
-  }
+export default function ClientChatPage() {
+  const { user } = useAuthStore();
+  const userId = user?.id ?? user?.user_id;
+
+  const [conversation, setConversation] = useState<Conversation | null>(null);
+  const [coachName, setCoachName] = useState<string>("");
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState("");
+  const [status, setStatus] = useState<"loading" | "no-coach" | "ready" | "error">("loading");
+  const [errorMsg, setErrorMsg] = useState("");
+  const socketRef = useRef<Socket | null>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const init = async () => {
+      try {
+        setStatus("loading");
+
+        const coachData = await clientDashboardService.getMyCoach(Number(userId));
+        if (!coachData.coach) {
+          setStatus("no-coach");
+          return;
+        }
+
+        setCoachName(coachData.coach.name);
+        const coachUserId = coachData.coach.user_id;
+        const convoRes = await chatService.getOrCreateConversation(coachUserId);
+        const convo = convoRes.Conversation;
+        setConversation(convo);
+
+        const msgs = await chatService.getMessages(convo.MessageList_id);
+        setMessages(msgs);
+
+        const socket = io(SOCKET_URL, { transports: ["websocket", "polling"] });
+        socketRef.current = socket;
+
+        socket.emit("join", { conversation_id: convo.MessageList_id });
+
+        socket.on("new_message", (msg: ChatMessage) => {
+          setMessages((prev) => [...prev, msg]);
+        });
+
+        setStatus("ready");
+      } catch (err) {
+        setErrorMsg(err instanceof Error ? err.message : "Failed to load chat.");
+        setStatus("error");
+      }
+    };
+
+    void init();
+
+    return () => {
+      socketRef.current?.disconnect();
+    };
+  }, [userId]);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleSend = () => {
+    if (!input.trim() || !conversation || !userId || !socketRef.current) return;
+
+    socketRef.current.emit("send_message", {
+      conversation_id: conversation.MessageList_id,
+      sender_id: Number(userId),
+      content: input.trim(),
+    });
+
+    setInput("");
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") handleSend();
+  };
 
   return (
     <MemberPortalShell activePage="chat" title="MESSAGES" subtitle="Communicate directly with your assigned coach.">
-      <div className="hh-card" style={{ height: "60vh", display: "flex", flexDirection: "column", padding: 0, overflow: "hidden" }}>
-        
-        <div style={{ flex: 1, padding: 24, overflowY: "auto", display: "flex", flexDirection: "column", gap: 16 }}>
-          {chat.map((msg, i) => (
-            <div key={i} style={{ display: "flex", gap: 12, alignSelf: msg.sender === "user" ? "flex-end" : "flex-start", maxWidth: "70%" }}>
-              {msg.sender === "coach" && <div style={{ width: 32, height: 32, borderRadius: "50%", backgroundColor: "var(--hh-bg-elevated)", display: "flex", alignItems: "center", justifyContent: "center" }}><UserIcon size={16} color="white" /></div>}
-              <div style={{ padding: "12px 16px", borderRadius: 8, backgroundColor: msg.sender === "user" ? "var(--hh-accent)" : "var(--hh-bg-elevated)", color: "white" }}>
-                <p style={{ fontSize: 14, margin: 0 }}>{msg.text}</p>
-              </div>
-            </div>
-          ))}
+      {status === "loading" && (
+        <div className="hh-card">
+          <p style={{ color: "var(--hh-text-muted)" }}>Connecting to chat...</p>
         </div>
+      )}
 
-        <form onSubmit={handleSend} style={{ padding: 16, borderTop: "1px solid #2c2c30", display: "flex", gap: 12, backgroundColor: "var(--hh-bg-card)" }}>
-          <input 
-            className="hh-input" 
-            placeholder="Type a message..." 
-            value={message} 
-            onChange={(e) => setMessage(e.target.value)} 
-            style={{ flex: 1, margin: 0 }} 
-          />
-          <button type="submit" className="btn btn--primary" style={{ padding: "0 16px" }}>
-            <Send size={16} />
-          </button>
-        </form>
+      {status === "no-coach" && (
+        <div className="hh-card" style={{ textAlign: "center", padding: 32 }}>
+          <p style={{ color: "var(--hh-text-muted)", marginBottom: 16 }}>
+            You need a coach before you can chat.
+          </p>
+          <a href="/dashboards/client/coaches" className="btn btn--primary">
+            Find a Coach
+          </a>
+        </div>
+      )}
 
-      </div>
+      {status === "error" && (
+        <div className="hh-card">
+          <p style={{ color: "var(--hh-error)" }}>{errorMsg}</p>
+        </div>
+      )}
+
+      {status === "ready" && conversation && (
+        <div className="hh-card" style={{ height: "60vh", display: "flex", flexDirection: "column", padding: 0, overflow: "hidden" }}>
+          <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--hh-border)", fontSize: 14, fontWeight: 600 }}>
+            {coachName || "Your Coach"}
+          </div>
+
+          <div style={{ flex: 1, padding: 24, overflowY: "auto", display: "flex", flexDirection: "column", gap: 12 }}>
+            {messages.length === 0 && (
+              <p style={{ color: "var(--hh-text-muted)", textAlign: "center", marginTop: 32 }}>
+                No messages yet. Say hello!
+              </p>
+            )}
+            {messages.map((msg) => {
+              const isMe = msg.sender_id === Number(userId);
+              return (
+                <div key={msg.message_id} style={{ display: "flex", justifyContent: isMe ? "flex-end" : "flex-start" }}>
+                  <div style={{ maxWidth: "70%" }}>
+                    <div style={{
+                      padding: "10px 14px",
+                      borderRadius: isMe ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
+                      background: isMe ? "var(--hh-accent)" : "var(--hh-bg-card-dark)",
+                      fontSize: 14,
+                      lineHeight: 1.5,
+                      color: "var(--hh-text-primary)",
+                    }}>
+                      {msg.content}
+                    </div>
+                    <div style={{ fontSize: 11, color: "var(--hh-text-muted)", marginTop: 4, textAlign: isMe ? "right" : "left" }}>
+                      {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            <div ref={bottomRef} />
+          </div>
+
+          <form
+            onSubmit={(e) => { e.preventDefault(); handleSend(); }}
+            style={{ padding: "12px 16px", borderTop: "1px solid var(--hh-border)", display: "flex", gap: 10 }}
+          >
+            <input
+              className="hh-input hh-input--no-icon-left hh-input--no-icon-right"
+              placeholder="Type a message..."
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              style={{ flex: 1 }}
+            />
+            <button type="submit" className="btn btn--primary" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <Send size={14} /> Send
+            </button>
+          </form>
+        </div>
+      )}
     </MemberPortalShell>
   );
 }

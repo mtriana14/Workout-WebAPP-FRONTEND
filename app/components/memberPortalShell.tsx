@@ -8,6 +8,7 @@ import { SignOutButton } from "@/app/components/signOutButton";
 import { useMemberPortal } from "@/app/lib/memberPortal";
 import NavComponent from "@/components/NavComponent";
 import { NAV_ITEMS_CLIENT } from "@/router/router";
+import { useAuthStore } from "@/store/authStore";
 
 type ActivePage =
   | "dashboard"
@@ -44,16 +45,18 @@ export function MemberPortalShell({
   children,
   headerActions,
 }: MemberPortalShellProps) {
-  const { displayName, isAuthenticated, isLoading, profile } = useMemberPortal();
+  const { displayName: portalDisplayName } = useMemberPortal();
+  const { token, user, hasHydrated } = useAuthStore();
 
-  if (isLoading) {
+  // Wait for Zustand to rehydrate from localStorage before deciding auth state
+  if (!hasHydrated) {
     return (
       <div className="hh-dash-root">
         <main className="hh-dash-main">
           <div className="hh-dash-content">
             <div className="hh-card">
               <h1 className="hh-page-title">Loading Portal</h1>
-              <p className="hh-page-subtitle">Fetching your profile and dashboard from the API.</p>
+              <p className="hh-page-subtitle">Restoring your session.</p>
             </div>
           </div>
         </main>
@@ -61,7 +64,8 @@ export function MemberPortalShell({
     );
   }
 
-  if (!isAuthenticated) {
+  // Use the same auth source as every other client page
+  if (!token || !user) {
     return (
       <div className="hh-dash-root">
         <main className="hh-dash-main">
@@ -69,7 +73,7 @@ export function MemberPortalShell({
             <div className="hh-card">
               <h1 className="hh-page-title">Sign In Required</h1>
               <p className="hh-page-subtitle">
-                This portal now loads from the Flask API and SQL database. Sign in first, then come back here.
+                Please sign in to access this page.
               </p>
               <div className="hh-portal-header__actions" style={{ marginTop: 16 }}>
                 <Link href="/auth/login" className="hh-portal-button hh-portal-button--primary">
@@ -85,6 +89,12 @@ export function MemberPortalShell({
       </div>
     );
   }
+
+  // Prefer the enriched display name from MemberPortalProvider; fall back to auth store
+  const displayName = portalDisplayName ||
+    `${(user as any).first_name ?? (user as any).firstName ?? ""} ${(user as any).last_name ?? (user as any).lastName ?? ""}`.trim() ||
+    (user as any).name ||
+    "Client";
 
   return (
     <div className="hh-dash-root">

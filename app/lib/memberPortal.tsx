@@ -17,6 +17,7 @@ import {
   updateCurrentDashboard,
   updateCurrentProfile,
 } from "@/app/lib/api";
+import { useAuthStore } from "@/store/authStore";
 
 export const WEEK_DAYS = [
   "Mon",
@@ -176,19 +177,21 @@ export function MemberPortalProvider({ children }: PropsWithChildren) {
 
     if (!session?.token) {
       try {
-        const raw = window.localStorage.getItem("auth");
-        const parsed = raw ? JSON.parse(raw) : null;
-        const zustandToken = parsed?.token ?? null;
-        const zustandUser = parsed?.user ?? null;
+        const authState = useAuthStore.getState();
+        const { token: zustandToken, user: zustandUser } = authState;
         if (zustandToken && zustandUser) {
+          const uid = (zustandUser as any).id ?? (zustandUser as any).user_id;
           session = {
             token: zustandToken,
             user: {
-              id: zustandUser.id,
-              userId: zustandUser.id,
-              firstName: zustandUser.first_name,
-              lastName: zustandUser.last_name,
-              name: `${zustandUser.first_name} ${zustandUser.last_name}`,
+              id: uid,
+              userId: uid,
+              firstName: (zustandUser as any).first_name ?? zustandUser.firstName ?? "",
+              lastName: (zustandUser as any).last_name ?? zustandUser.lastName ?? "",
+              name: [
+                (zustandUser as any).first_name ?? zustandUser.firstName ?? "",
+                (zustandUser as any).last_name ?? zustandUser.lastName ?? "",
+              ].join(" ").trim(),
               email: zustandUser.email,
               role: zustandUser.role,
             },
@@ -225,18 +228,18 @@ export function MemberPortalProvider({ children }: PropsWithChildren) {
         "Could not fetch profile APIs. Falling back to session data.",
       );
 
-      const user = session.user as any;
+      const user = session?.user as any;
 
       setProfile(
         mergeProfile({
-          firstName: user.firstName || user.first_name || "Coach",
-          lastName: user.lastName || user.last_name || "",
-          email: user.email,
-          role: user.role,
+          firstName: user?.firstName || user?.first_name || "",
+          lastName: user?.lastName || user?.last_name || "",
+          email: user?.email || "",
+          role: user?.role || "client",
         }),
       );
       setDashboard(DEFAULT_DASHBOARD);
-      setUserRole(user.role || "client");
+      setUserRole(user?.role || "client");
       setIsAuthenticated(true);
     } finally {
       setIsLoading(false);

@@ -5,8 +5,9 @@ import NavComponent from "@/components/NavComponent";
 import { SignOutButton } from "@/app/components/signOutButton";
 import { NAV_ITEMS_CLIENT } from "@/router/router";
 import { clientDashboardService, CoachInfo } from "@/services/clientDashboardService";
+import { reviewService, type CoachReview } from "@/services/reviewService";
 import { useAuthStore } from "@/store/authStore";
-import { Dumbbell } from "lucide-react";
+import { Dumbbell, Star } from "lucide-react";
 
 
 export default function FindCoachesPage() {
@@ -15,6 +16,8 @@ export default function FindCoachesPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedCoach, setSelectedCoach] = useState<CoachInfo | null>(null);
+  const [reviews, setReviews] = useState<CoachReview[]>([]);
+  const [avgRating, setAvgRating] = useState<number | null>(null);
   const [requestMessage, setRequestMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
@@ -37,6 +40,19 @@ export default function FindCoachesPage() {
     loadCoaches();
   }, []);
 
+  const handleSelectCoach = async (coach: CoachInfo) => {
+    setSelectedCoach(coach);
+    setReviews([]);
+    setAvgRating(null);
+    try {
+      const data = await reviewService.getByCoach(coach.user_id);
+      setReviews(data.reviews ?? []);
+      setAvgRating(data.avg_rating ?? null);
+    } catch {
+      // non-critical
+    }
+  };
+
   const showToast = (message: string, type: "success" | "error") => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
@@ -49,6 +65,8 @@ export default function FindCoachesPage() {
       await clientDashboardService.sendRequest(userId, selectedCoach.coach_id, requestMessage);
       showToast("Request sent successfully!", "success");
       setSelectedCoach(null);
+      setReviews([]);
+      setAvgRating(null);
       setRequestMessage("");
     } catch (error) {
       showToast(error instanceof Error ? error.message : "Failed to send request", "error");
@@ -72,7 +90,7 @@ export default function FindCoachesPage() {
 
       {/* Coach Detail Modal */}
       {selectedCoach && (
-        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 999 }} onClick={() => setSelectedCoach(null)}>
+        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 999 }} onClick={() => { setSelectedCoach(null); setReviews([]); setAvgRating(null); }}>
           <div className="hh-card" style={{ width: 500, maxHeight: "85vh", overflow: "auto", padding: 0 }} onClick={(e) => e.stopPropagation()}>
             {/* Header */}
             <div style={{ padding: "24px", borderBottom: "1px solid var(--hh-border)" }}>
@@ -83,6 +101,12 @@ export default function FindCoachesPage() {
                 <div>
                   <h2 style={{ margin: 0, fontSize: 20 }}>{selectedCoach.name}</h2>
                   <p style={{ margin: "4px 0 0", fontSize: 14, color: "var(--hh-text-muted)" }}>{selectedCoach.specialization || "Fitness Coach"}</p>
+                  {avgRating !== null && (
+                    <span style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4, fontSize: 13, color: "var(--hh-text-muted)" }}>
+                      <Star size={13} color="var(--hh-accent)" fill="var(--hh-accent)" />
+                      {avgRating.toFixed(1)} · {reviews.length} review{reviews.length !== 1 ? "s" : ""}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -120,6 +144,43 @@ export default function FindCoachesPage() {
                 </div>
               )}
 
+              {/* Reviews */}
+              <div style={{ marginBottom: 20 }}>
+                <h4 style={{ margin: "0 0 10px", fontSize: 12, color: "var(--hh-text-muted)", textTransform: "uppercase" }}>
+                  Reviews {avgRating !== null && `· ${avgRating.toFixed(1)} avg`}
+                </h4>
+                {reviews.length === 0 ? (
+                  <p style={{ margin: 0, fontSize: 13, color: "var(--hh-text-muted)" }}>No reviews yet.</p>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {reviews.map((r, i) => (
+                      <div key={r.review_id} style={{ paddingBottom: 12, borderBottom: i < reviews.length - 1 ? "1px solid var(--hh-border)" : "none" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                          <div style={{ display: "flex" }}>
+                            {[...Array(5)].map((_, idx) => (
+                              <Star key={idx} size={12} color="var(--hh-accent)" fill={idx < r.rating ? "var(--hh-accent)" : "none"} />
+                            ))}
+                          </div>
+                          {r.reviewer_name && (
+                            <span style={{ fontSize: 12, fontWeight: 600, color: "var(--hh-text-primary)" }}>{r.reviewer_name}</span>
+                          )}
+                          {r.created_at && (
+                            <span style={{ fontSize: 11, color: "var(--hh-text-muted)" }}>
+                              {new Date(r.created_at).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                        {r.comment && (
+                          <p style={{ margin: 0, fontSize: 13, color: "var(--hh-text-secondary)", lineHeight: 1.5 }}>
+                            &ldquo;{r.comment}&rdquo;
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {/* Request Form */}
               <div style={{ borderTop: "1px solid var(--hh-border)", paddingTop: 20 }}>
                 <h4 style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 600 }}>Send a Request</h4>
@@ -143,7 +204,7 @@ export default function FindCoachesPage() {
 
             {/* Footer */}
             <div style={{ padding: "16px 24px", borderTop: "1px solid var(--hh-border)", display: "flex", justifyContent: "flex-end" }}>
-              <button onClick={() => setSelectedCoach(null)} style={{ padding: "10px 20px", border: "1px solid var(--hh-border)", borderRadius: 6, backgroundColor: "transparent", cursor: "pointer", fontSize: 14 }}>Close</button>
+              <button onClick={() => { setSelectedCoach(null); setReviews([]); setAvgRating(null); }} style={{ padding: "10px 20px", border: "1px solid var(--hh-border)", borderRadius: 6, backgroundColor: "transparent", cursor: "pointer", fontSize: 14 }}>Close</button>
             </div>
           </div>
         </div>
@@ -192,7 +253,7 @@ export default function FindCoachesPage() {
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
               {filtered.map((coach) => (
-                <div key={coach.coach_id} className="hh-card" style={{ padding: 0, overflow: "hidden", cursor: "pointer" }} onClick={() => setSelectedCoach(coach)}>
+                <div key={coach.coach_id} className="hh-card" style={{ padding: 0, overflow: "hidden", cursor: "pointer" }} onClick={() => handleSelectCoach(coach)}>
                   <div style={{ padding: 20 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 12 }}>
                       <div style={{ width: 48, height: 48, borderRadius: "50%", backgroundColor: "var(--hh-accent)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: 600, fontSize: 16 }}>

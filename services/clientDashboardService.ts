@@ -21,6 +21,7 @@ export interface CoachInfo {
 
 export interface MyCoach {
   coach_id: number;
+  user_id: number;
   name: string;
   email: string | null;
   specialization: string | null;

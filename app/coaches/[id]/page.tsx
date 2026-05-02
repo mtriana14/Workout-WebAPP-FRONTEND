@@ -5,12 +5,15 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Star, DollarSign, User as UserIcon, CheckCircle, Clock, ShieldCheck } from "lucide-react";
 import { MemberPortalShell } from "@/app/components/memberPortalShell";
 import { getStoredAuthToken, fetchCoachById, sendCoachingRequest, type CoachRecord } from "@/app/lib/api";
+import { reviewService, type CoachReview } from "@/services/reviewService";
 
 export default function CoachProfilePage() {
   const params = useParams();
   const router = useRouter();
   
   const [coach, setCoach] = useState<CoachRecord | null>(null);
+  const [reviews, setReviews] = useState<CoachReview[]>([]);
+  const [avgRating, setAvgRating] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   
@@ -30,6 +33,13 @@ export default function CoachProfilePage() {
         const coachId = parseInt(params.id as string, 10);
         const data = await fetchCoachById(token, coachId);
         setCoach(data);
+        try {
+          const reviewData = await reviewService.getByCoach(coachId);
+          setReviews(reviewData.reviews ?? []);
+          setAvgRating(reviewData.avg_rating ?? null);
+        } catch {
+          // reviews are non-critical
+        }
       } catch (err) {
         setError("Unable to load coach profile.");
       } finally {
@@ -115,9 +125,12 @@ export default function CoachProfilePage() {
               
               <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
                 <span className="hh-portal-pill">{coach.specialty}</span>
-                <span className="hh-portal-pill" style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                  <Star size={12} color="var(--hh-accent)" fill="var(--hh-accent)" /> {coach.rating}
-                </span>
+                {avgRating !== null && (
+                  <span className="hh-portal-pill" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <Star size={12} color="var(--hh-accent)" fill="var(--hh-accent)" />
+                    {avgRating.toFixed(1)} ({reviews.length})
+                  </span>
+                )}
               </div>
               
               <p className="hh-portal-card-copy" style={{ fontSize: 16, lineHeight: 1.6 }}>
@@ -126,26 +139,45 @@ export default function CoachProfilePage() {
             </div>
           </div>
 
-          {/* UC 2.5 Bridge: Reviews Section */}
+          {/* Reviews */}
           <div className="hh-card">
-            <h2 className="hh-panel-heading">Recent Reviews</h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 16 }}>
-              {[1, 2].map((i) => (
-                <div key={i} style={{ paddingBottom: 16, borderBottom: i === 1 ? "1px solid #2c2c30" : "none" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                    <div style={{ display: "flex" }}>
-                      {[...Array(5)].map((_, idx) => (
-                        <Star key={idx} size={14} color="var(--hh-accent)" fill={idx < 4 || i === 1 ? "var(--hh-accent)" : "none"} />
-                      ))}
-                    </div>
-                    <span className="hh-text-muted" style={{ fontSize: 12 }}>Last month</span>
-                  </div>
-                  <p className="hh-portal-card-copy">
-                    "{coach.first_name} is incredible! The programs are easy to follow and exactly tailored to my goals."
-                  </p>
-                </div>
-              ))}
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+              <h2 className="hh-panel-heading" style={{ margin: 0 }}>Reviews</h2>
+              {avgRating !== null && (
+                <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "var(--hh-text-muted)" }}>
+                  <Star size={13} color="var(--hh-accent)" fill="var(--hh-accent)" />
+                  {avgRating.toFixed(1)} · {reviews.length} review{reviews.length !== 1 ? "s" : ""}
+                </span>
+              )}
             </div>
+            {reviews.length === 0 ? (
+              <p style={{ color: "var(--hh-text-muted)", fontSize: 14 }}>No reviews yet.</p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                {reviews.map((r, i) => (
+                  <div key={r.review_id} style={{ paddingBottom: 16, borderBottom: i < reviews.length - 1 ? "1px solid var(--hh-border)" : "none" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                      <div style={{ display: "flex" }}>
+                        {[...Array(5)].map((_, idx) => (
+                          <Star key={idx} size={13} color="var(--hh-accent)" fill={idx < r.rating ? "var(--hh-accent)" : "none"} />
+                        ))}
+                      </div>
+                      {r.reviewer_name && (
+                        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--hh-text-primary)" }}>{r.reviewer_name}</span>
+                      )}
+                      {r.created_at && (
+                        <span style={{ fontSize: 12, color: "var(--hh-text-muted)" }}>
+                          {new Date(r.created_at).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                    {r.comment && (
+                      <p className="hh-portal-card-copy" style={{ margin: 0 }}>&ldquo;{r.comment}&rdquo;</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           
         </section>

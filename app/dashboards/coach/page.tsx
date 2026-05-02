@@ -61,7 +61,7 @@ export default function CoachDashboardPage() {
         const dashboardResponse = await coachDashboardService.get();
         setDashboard(dashboardResponse);
         try {
-          const requestResponse = await clientRequestService.getPending(dashboardResponse.coach_id);
+          const requestResponse = await clientRequestService.getPending(Number(user?.id ?? user?.user_id ?? 0));
           setPendingRequests(requestResponse.requests ?? []);
         } catch {
           setPendingRequests([]);
