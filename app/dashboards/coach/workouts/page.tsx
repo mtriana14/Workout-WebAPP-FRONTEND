@@ -23,8 +23,6 @@ function humanize(str: string) {
 
 const isDefined = (v: string | undefined): v is string => v !== undefined && v !== null;
 
-type Exercise = { name: string; sets: number; reps: string; rest: string };
-
 export default function CoachWorkouts() {
   const user = useAuthStore((state) => state.user);
   const coachUserId = user?.id ?? user?.user_id;
