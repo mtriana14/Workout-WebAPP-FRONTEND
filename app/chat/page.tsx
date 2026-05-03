@@ -14,14 +14,15 @@ export default function ClientChatPage() {
   const { user } = useAuthStore();
   const userId = user?.id ?? user?.user_id;
 
-  const [conversation, setConversation] = useState<Conversation | null>(null);
-  const [coachName, setCoachName] = useState<string>("");
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState("");
-  const [status, setStatus] = useState<"loading" | "no-coach" | "ready" | "error">("loading");
-  const [errorMsg, setErrorMsg] = useState("");
-  const socketRef = useRef<Socket | null>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const [conversation, setConversation]   = useState<Conversation | null>(null);
+  const [coachName, setCoachName]         = useState<string>("");
+  const [messages, setMessages]           = useState<ChatMessage[]>([]);
+  const [input, setInput]                 = useState("");
+  const [status, setStatus]               = useState<"loading" | "no-coach" | "ready" | "error">("loading");
+  const [errorMsg, setErrorMsg]           = useState("");
+  const socketRef                         = useRef<Socket | null>(null);
+  const bottomRef                         = useRef<HTMLDivElement>(null);
+  const conversationRef                   = useRef<number | null>(null);
 
   useEffect(() => {
     if (!userId) return;
@@ -41,17 +42,37 @@ export default function ClientChatPage() {
         const convoRes = await chatService.getOrCreateConversation(coachUserId);
         const convo = convoRes.Conversation;
         setConversation(convo);
+        conversationRef.current = convo.MessageList_id;
 
         const msgs = await chatService.getMessages(convo.MessageList_id);
         setMessages(msgs);
 
+        if (socketRef.current?.connected) {
+          setStatus("ready");
+          return;
+        }
+
         const socket = io(SOCKET_URL, { transports: ["websocket", "polling"] });
         socketRef.current = socket;
 
-        socket.emit("join", { conversation_id: convo.MessageList_id });
+        socket.on("connect", () => {
+          socket.emit("join", { conversation_id: convo.MessageList_id });
+        });
 
         socket.on("new_message", (msg: ChatMessage) => {
-          setMessages((prev) => [...prev, msg]);
+          setMessages((prev) => {
+            // prevent duplicate messages
+            if (prev.some((m) => m.message_id === msg.message_id)) return prev;
+            return [...prev, msg];
+          });
+        });
+
+        socket.on("error", (data: { message: string }) => {
+          console.error("Socket error:", data.message);
+        });
+
+        socket.on("disconnect", () => {
+          console.log("Socket disconnected");
         });
 
         setStatus("ready");
@@ -65,9 +86,11 @@ export default function ClientChatPage() {
 
     return () => {
       socketRef.current?.disconnect();
+      socketRef.current = null;
     };
   }, [userId]);
 
+  // scroll to bottom whenever messages change
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -90,6 +113,7 @@ export default function ClientChatPage() {
 
   return (
     <MemberPortalShell activePage="chat" title="MESSAGES" subtitle="Communicate directly with your assigned coach.">
+      
       {status === "loading" && (
         <div className="hh-card">
           <p style={{ color: "var(--hh-text-muted)" }}>Connecting to chat...</p>
@@ -114,11 +138,16 @@ export default function ClientChatPage() {
       )}
 
       {status === "ready" && conversation && (
-        <div className="hh-card" style={{ height: "60vh", display: "flex", flexDirection: "column", padding: 0, overflow: "hidden" }}>
+        <div
+          className="hh-card"
+          style={{ height: "60vh", display: "flex", flexDirection: "column", padding: 0, overflow: "hidden" }}
+        >
+          {/* header */}
           <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--hh-border)", fontSize: 14, fontWeight: 600 }}>
             {coachName || "Your Coach"}
           </div>
 
+          {/* messages */}
           <div style={{ flex: 1, padding: 24, overflowY: "auto", display: "flex", flexDirection: "column", gap: 12 }}>
             {messages.length === 0 && (
               <p style={{ color: "var(--hh-text-muted)", textAlign: "center", marginTop: 32 }}>
@@ -130,17 +159,26 @@ export default function ClientChatPage() {
               return (
                 <div key={msg.message_id} style={{ display: "flex", justifyContent: isMe ? "flex-end" : "flex-start" }}>
                   <div style={{ maxWidth: "70%" }}>
-                    <div style={{
-                      padding: "10px 14px",
-                      borderRadius: isMe ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
-                      background: isMe ? "var(--hh-accent)" : "var(--hh-bg-card-dark)",
-                      fontSize: 14,
-                      lineHeight: 1.5,
-                      color: "var(--hh-text-primary)",
-                    }}>
+                    <div
+                      style={{
+                        padding: "10px 14px",
+                        borderRadius: isMe ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
+                        background: isMe ? "var(--hh-accent)" : "var(--hh-bg-card-dark)",
+                        fontSize: 14,
+                        lineHeight: 1.5,
+                        color: "var(--hh-text-primary)",
+                      }}
+                    >
                       {msg.content}
                     </div>
-                    <div style={{ fontSize: 11, color: "var(--hh-text-muted)", marginTop: 4, textAlign: isMe ? "right" : "left" }}>
+                    <div
+                      style={{
+                        fontSize: 11,
+                        color: "var(--hh-text-muted)",
+                        marginTop: 4,
+                        textAlign: isMe ? "right" : "left",
+                      }}
+                    >
                       {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </div>
                   </div>
@@ -150,6 +188,7 @@ export default function ClientChatPage() {
             <div ref={bottomRef} />
           </div>
 
+          {/* input */}
           <form
             onSubmit={(e) => { e.preventDefault(); handleSend(); }}
             style={{ padding: "12px 16px", borderTop: "1px solid var(--hh-border)", display: "flex", gap: 10 }}
@@ -162,7 +201,12 @@ export default function ClientChatPage() {
               onKeyDown={handleKeyDown}
               style={{ flex: 1 }}
             />
-            <button type="submit" className="btn btn--primary" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <button
+              type="submit"
+              className="btn btn--primary"
+              style={{ display: "flex", alignItems: "center", gap: 6 }}
+              disabled={!input.trim()}
+            >
               <Send size={14} /> Send
             </button>
           </form>
