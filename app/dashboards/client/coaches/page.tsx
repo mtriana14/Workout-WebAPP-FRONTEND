@@ -23,12 +23,17 @@ export default function FindCoachesPage() {
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const userId = user?.id ?? user?.user_id;
+  const [hasActiveCoach, setHasActiveCoach] = useState(false);
 
   const loadCoaches = async () => {
     try {
       setLoading(true);
-      const data = await clientDashboardService.getCoaches();
-      setCoaches(data.coaches);
+      const [coachesData, myCoachData] = await Promise.all([
+        clientDashboardService.getCoaches(),
+        userId ? clientDashboardService.getMyCoach(Number(userId)).catch(() => ({ coach: null })) : Promise.resolve({ coach: null }),
+      ]);
+      setCoaches(coachesData.coaches);
+      setHasActiveCoach(!!myCoachData.coach);
     } catch {
       console.error("Failed to load coaches");
     } finally {
@@ -38,7 +43,7 @@ export default function FindCoachesPage() {
 
   useEffect(() => {
     loadCoaches();
-  }, []);
+  }, [userId]);
 
   const handleSelectCoach = async (coach: CoachInfo) => {
     setSelectedCoach(coach);
@@ -183,22 +188,32 @@ export default function FindCoachesPage() {
 
               {/* Request Form */}
               <div style={{ borderTop: "1px solid var(--hh-border)", paddingTop: 20 }}>
-                <h4 style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 600 }}>Send a Request</h4>
-                <textarea
-                  placeholder="Introduce yourself and tell the coach about your fitness goals..."
-                  value={requestMessage}
-                  onChange={(e) => setRequestMessage(e.target.value)}
-                  className="hh-input"
-                  rows={3}
-                  style={{ resize: "vertical", marginBottom: 12 }}
-                />
-                <button
-                  onClick={handleSendRequest}
-                  disabled={sending}
-                  style={{ width: "100%", padding: "12px", border: "none", borderRadius: 8, backgroundColor: "var(--hh-accent)", color: "white", fontSize: 14, fontWeight: 600, cursor: sending ? "not-allowed" : "pointer", opacity: sending ? 0.6 : 1 }}
-                >
-                  {sending ? "Sending..." : "Send Request"}
-                </button>
+                {hasActiveCoach ? (
+                  <div style={{ padding: "14px 16px", borderRadius: 8, backgroundColor: "rgba(234, 179, 8, 0.08)", border: "1px solid rgba(234, 179, 8, 0.3)" }}>
+                    <p style={{ margin: 0, fontSize: 13, color: "var(--hh-warning)", fontWeight: 500 }}>
+                      You already have an active coach. Dismiss your current coach from your dashboard before requesting a new one.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <h4 style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 600 }}>Send a Request</h4>
+                    <textarea
+                      placeholder="Introduce yourself and tell the coach about your fitness goals..."
+                      value={requestMessage}
+                      onChange={(e) => setRequestMessage(e.target.value)}
+                      className="hh-input"
+                      rows={3}
+                      style={{ resize: "vertical", marginBottom: 12 }}
+                    />
+                    <button
+                      onClick={handleSendRequest}
+                      disabled={sending}
+                      style={{ width: "100%", padding: "12px", border: "none", borderRadius: 8, backgroundColor: "var(--hh-accent)", color: "white", fontSize: 14, fontWeight: 600, cursor: sending ? "not-allowed" : "pointer", opacity: sending ? 0.6 : 1 }}
+                    >
+                      {sending ? "Sending..." : "Send Request"}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 

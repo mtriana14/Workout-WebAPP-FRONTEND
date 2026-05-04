@@ -8,6 +8,7 @@ export interface ClientRequest {
   coach_id: number;
   message: string | null;
   status: "pending" | "accepted" | "declined";
+  is_active: boolean;
   responded_at: string | null;
   created_at: string;
 }

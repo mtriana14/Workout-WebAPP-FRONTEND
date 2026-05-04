@@ -61,15 +61,17 @@ export const NAV_ITEMS_COACH: NavItem[] = [
 ];
 
 export const NAV_ITEMS_CLIENT: NavItem[] = [
-  { label: "Dashboard",    icon: LayoutDashboard, href: "/dashboards/client",          active: false },
-  { label: "Find Coaches", icon: Search,          href: "/dashboards/client/coaches",   active: false },
-  { label: "My Workouts",  icon: Activity,        href: "/dashboards/client/workouts",  active: false },
-  { label: "My Meals",     icon: Utensils,        href: "/dashboards/client/meals",     active: false },
-  { label: "Chat",         icon: MessageCircle,   href: "/chat",                        active: false },
-  { label: "Weekly Calendar", icon: CalendarDays, href: "/weekly-calendar",             active: false },
-  { label: "Progress",     icon: TrendingUp,      href: "/dashboards/client/progress",  active: false },
-  { label: "Progress Photos", icon: Images,       href: "/dashboards/client/progress/photos", active: false },
-  { label: "My Invoices",  icon: ReceiptText,     href: "/my-invoices",                 active: false },
-  { label: "Leave Review",    icon: Star,            href: "/leave-a-review",              active: false },
-  { label: "Become a Coach", icon: Award,           href: "/become-coach",                active: false },
+  { label: "Dashboard",    icon: LayoutDashboard, href: "/dashboards/client",                  active: false },
+  { label: "Find Coaches", icon: Search,          href: "/dashboards/client/coaches",           active: false },
+  { label: "My Workouts",  icon: Activity,        href: "/dashboards/client/workouts",          active: false },
+  { label: "My Meals",     icon: Utensils,        href: "/dashboards/client/meals",             active: false },
+  { label: "Chat",         icon: MessageCircle,   href: "/chat",                                active: false },
+  { label: "Weekly Calendar", icon: CalendarDays, href: "/weekly-calendar",                     active: false },
+  { label: "Progress",     icon: TrendingUp,      href: "/dashboards/client/progress",          active: false },
+  { label: "Progress Photos", icon: Images,       href: "/dashboards/client/progress/photos",   active: false },
+  { label: "My Invoices",  icon: ReceiptText,     href: "/my-invoices",                         active: false },
+  { label: "Leave Review", icon: Star,            href: "/leave-a-review",                      active: false },
+  { label: "Become a Coach", icon: Award,         href: "/become-coach",                        active: false },
+  { label: "Profile",      icon: User,            href: "/dashboards/client/profile",           active: false },
+  { label: "Settings",     icon: Settings,        href: "/dashboards/client/settings",          active: false },
 ];

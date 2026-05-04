@@ -5,8 +5,18 @@ interface CoachesResponse {
   coaches: CoachItem[];
 }
 
+export interface PendingRegistration {
+  coach_id: number; // reg_id from CoachRegistration
+  user_id: number;
+  name: string;
+  email: string;
+  specialization: string;
+  status: "pending";
+  created_at: string;
+}
+
 interface PendingCoachesResponse {
-  pending_coaches: CoachItem[];
+  pending_coaches: PendingRegistration[];
 }
 
 interface MessageResponse {
@@ -14,28 +24,28 @@ interface MessageResponse {
 }
 
 export const coachService = {
-  // Get all coaches (admin view)
   getAll: () =>
-    apiClient<CoachesResponse>("admin/coaches", {
-      method: "GET",
-    }),
+    apiClient<CoachesResponse>("admin/coaches", { method: "GET" }),
 
-  // Get pending coach registrations (UC 10.2)
   getPending: () =>
-    apiClient<PendingCoachesResponse>("admin/coaches/pending", {
-      method: "GET",
-    }),
+    apiClient<PendingCoachesResponse>("admin/coaches/pending", { method: "GET" }),
 
-  // Update coach status (UC 10.2 & 10.3)
   updateStatus: (coachId: number, action: string) =>
     apiClient<MessageResponse>(`admin/coaches/${coachId}/status`, {
       method: "PUT",
       body: { status: action },
     }),
 
-  // Get single coach details
-  getById: (coachId: number) =>
-    apiClient<{ coach: CoachItem }>(`admin/coaches/${coachId}`, {
-      method: "GET",
+  processRegistration: (regId: number, action: "approved" | "rejected") =>
+    apiClient<MessageResponse>(`admin/coaches/${regId}/process`, {
+      method: "PUT",
+      body: {
+        action,
+        cost: 0,
+        rejection_reason: action === "rejected" ? "Rejected by admin" : undefined,
+      },
     }),
+
+  getById: (coachId: number) =>
+    apiClient<{ coach: CoachItem }>(`admin/coaches/${coachId}`, { method: "GET" }),
 };

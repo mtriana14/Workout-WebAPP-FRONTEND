@@ -10,6 +10,7 @@ import { coachDashboardService, type CoachDashboard } from "@/services/coachDash
 import { clientRequestService, type ClientRequest } from "@/services/ClientRequest";
 import { useAuthStore } from "@/store/authStore";
 import { Dumbbell } from "lucide-react";
+import { NotificationBell } from "@/app/components/NotificationBell";
 
 interface CoachCard {
   label: string;
@@ -126,9 +127,14 @@ export default function CoachDashboardPage() {
 
       <main className="hh-dash-main">
         <div className="hh-dash-content">
-          <div>
-            <h1 className="hh-page-title">COACH DASHBOARD</h1>
-            <p className="hh-page-subtitle">Welcome back, {displayName}.</p>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16 }}>
+            <div>
+              <h1 className="hh-page-title">COACH DASHBOARD</h1>
+              <p className="hh-page-subtitle">Welcome back, {displayName}.</p>
+            </div>
+            {(user?.id ?? user?.user_id) && (
+              <NotificationBell userId={Number(user?.id ?? user?.user_id)} />
+            )}
           </div>
           {error ? <p className="hh-error-msg">{error}</p> : null}
 

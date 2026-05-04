@@ -16,6 +16,7 @@ import { coachService } from "@/services/coachService";
 import { exerciseService } from "@/services/exerciseService";
 import { paymentService } from "@/services/paymentService";
 import { useAuthStore } from "@/store/authStore";
+import { NotificationBell } from "@/app/components/NotificationBell";
 
 interface AdminStats {
   totalCoaches: number;
@@ -137,11 +138,14 @@ export default function AdminDashboardPage() {
 
       <main className="hh-dash-main">
         <div className="hh-dash-content">
-          <div>
-            <h1 className="hh-page-title">ADMIN DASHBOARD</h1>
-            <p className="hh-page-subtitle">
-              Welcome back, {user?.name ?? "Admin"}.
-            </p>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16 }}>
+            <div>
+              <h1 className="hh-page-title">ADMIN DASHBOARD</h1>
+              <p className="hh-page-subtitle">Welcome back, {user?.name ?? "Admin"}.</p>
+            </div>
+            {(user?.id ?? user?.user_id) && (
+              <NotificationBell userId={Number(user?.id ?? user?.user_id)} />
+            )}
           </div>
 
           <div className="hh-stats-grid">

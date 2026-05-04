@@ -142,6 +142,12 @@ export const clientDashboardService = {
       method: "GET",
     }),
 
+  // Dismiss current coach
+  dismissCoach: (coachId: number) =>
+    apiClient<{ message: string }>(`client/dismiss-coach/${coachId}`, {
+      method: "PUT",
+    }),
+
   // Get coach details
   getCoachDetails: (coachId: number) =>
     apiClient<{ coach: CoachInfo }>("client/coaches/" + coachId, {

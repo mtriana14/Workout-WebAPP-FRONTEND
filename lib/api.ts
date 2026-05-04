@@ -14,22 +14,15 @@ interface RequestOptions {
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
 
-  try {
-    const session = localStorage.getItem("herahealth.auth");
-    if (session) {
-      const parsed = JSON.parse(session);
-      if (typeof parsed.token === "string" && parsed.token.length > 0) {
-        return parsed.token;
-      }
-    }
-  } catch {
-    // Fall through to the Zustand store key.
-  }
+  // In-memory Zustand state is per-tab — always prefer it.
+  const storeToken = useAuthStore.getState().token;
+  if (storeToken) return storeToken;
 
+  // Fallback: sessionStorage (also per-tab, survives hard refreshes within the tab).
   try {
-    const persistedStore = localStorage.getItem("auth");
-    if (persistedStore) {
-      const parsed = JSON.parse(persistedStore);
+    const persisted = sessionStorage.getItem("auth");
+    if (persisted) {
+      const parsed = JSON.parse(persisted);
       if (typeof parsed.state?.token === "string" && parsed.state.token.length > 0) {
         return parsed.state.token;
       }
@@ -44,6 +37,8 @@ function getToken(): string | null {
 function clearStoredAuth() {
   if (typeof window === "undefined") return;
   useAuthStore.getState().clearAuth();
+  sessionStorage.removeItem("auth");
+  // Clean up any legacy localStorage keys from before this fix.
   localStorage.removeItem("auth");
   localStorage.removeItem("herahealth.auth");
 }

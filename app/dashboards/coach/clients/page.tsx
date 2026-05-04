@@ -30,7 +30,7 @@ export default function CoachClientsPage() {
       try {
         const response = await clientRequestService.getAll(coachId);
         const acceptedClients = (response.requests ?? []).filter(
-          (request) => request.status === "accepted",
+          (request) => request.is_active,
         );
         setClients(acceptedClients);
       } catch {
