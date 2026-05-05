@@ -12,13 +12,13 @@ import {
   Search,
   MessageSquare,
   CreditCard,
-  Apple
+  Apple,
+  Bell        
 } from "lucide-react";
 
 import { useMemberPortal } from "@/app/lib/memberPortal";
 
-type ActivePage = "dashboard" | "profile" | "coaches" | "settings" | "activity" | "chat" | "billing" | "nutrition";
-
+type ActivePage = "dashboard" | "profile" | "coaches" | "settings" | "activity" | "chat" | "billing" | "nutrition" | "notifications";
 interface MemberPortalShellProps {
   activePage: ActivePage;
   title: string;
@@ -37,6 +37,7 @@ const NAV_ITEMS = [
   { id: "settings", label: "Preferences", icon: Settings, href: "/settings" },
   { id: "activity", label: "Activity", icon: Activity, href: "/activity" },
   { id: "billing", label: "Billing", icon: CreditCard, href: "/billing" },
+  { id: "notifications", label: "Notifications", icon: Bell, href: "/dashboards/client/notifications" },
 ] as const;
 
 const MOBILE_LINKS = [

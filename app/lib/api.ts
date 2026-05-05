@@ -652,3 +652,62 @@ export function deleteAdminNotification(token: string, notificationId: number) {
     token,
   );
 }
+
+export function fetchUserNotifications(token: string, userId: number) {
+  return apiRequest<{ notifications: UserNotificationRecord[] }>(
+    `/notifications/user/${userId}`,
+    { method: "GET" },
+    token,
+  );
+}
+
+export function fetchUserUnreadNotifications(token: string, userId: number) {
+  return apiRequest<{ notifications: UserNotificationRecord[]; unread_count: number }>(
+    `/notifications/user/${userId}/unread`,
+    { method: "GET" },
+    token,
+  );
+}
+
+export function markNotificationRead(token: string, notificationId: number) {
+  return apiRequest<{ message: string }>(
+    `/notifications/${notificationId}/read`,
+    { method: "PUT" },
+    token,
+  );
+}
+
+export function markAllNotificationsRead(token: string, userId: number) {
+  return apiRequest<{ message: string }>(
+    `/notifications/user/${userId}/read-all`,
+    { method: "PUT" },
+    token,
+  );
+}
+
+export function fetchCoachProfile(token: string) {
+  return apiRequest<any>("/auth/update/update_coach", { method: "GET" }, token);
+}
+
+export function updateCoachProfile(token: string, payload: {
+  bio?: string;
+  specialization?: string;
+  certifications?: string;
+  cost?: number;
+  experience_years?: number;
+}) {
+  return apiRequest<{ message: string }>(
+    "/auth/update/update_coach",
+    { method: "PATCH", body: JSON.stringify(payload) },
+    token,
+  );
+}
+
+export interface UserNotificationRecord {
+  id: number;
+  title: string;
+  message: string;
+  type: string;
+  is_read: boolean;
+  created_at?: string | null;
+}

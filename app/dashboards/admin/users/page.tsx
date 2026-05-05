@@ -40,7 +40,8 @@ export default function UsersPage() {
   const loadUsers = async () => {
     try {
       const data = await userService.getAll();
-      setUsers(data);
+      console.log(data.users);
+      setUsers(data.users);
     } catch (error) {
       setError("Failed to load users.");
     } finally {
@@ -49,6 +50,7 @@ export default function UsersPage() {
   };
   useEffect(() => {
       loadUsers();
+      console.log(users.length);
       console.log(users);
        
   }, []);
@@ -66,7 +68,7 @@ export default function UsersPage() {
         <div className="hh-sidebar__header">
           <a href="/" className="hh-logo">
             <div className="hh-logo__icon hh-logo__icon--md">
-              <img src={LOGO_ICON} alt="" width={16} height={16} />
+              {/* <img src={LOGO_ICON} alt="" width={16} height={16} /> */}
             </div>
             <span className="hh-logo__text hh-logo__text--md">HeraHealth</span>
           </a>

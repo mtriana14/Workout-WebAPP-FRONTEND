@@ -7,3 +7,15 @@ export interface UserItem {
   is_active:  boolean;
   created_at: string;
 }
+
+interface Counts {
+
+ active: number;
+ admins: number;
+  
+}
+export interface UserRequest{
+  users: UserItem[];
+  count: Counts;
+
+}
