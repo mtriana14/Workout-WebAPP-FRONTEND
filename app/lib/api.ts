@@ -546,12 +546,14 @@ export function fetchAdminPendingCoaches(token: string) {
   );
 }
 
-export function processAdminCoach(token: string, coachId: number, action: "approved" | "rejected") {
+export function processAdminCoach(token: string, coachId: number, action: "approved" | "rejected", reason?: string) {
+  const body: Record<string, string> = { status: action };
+  if (reason) body.reason = reason;
   return apiRequest<{ message: string }>(
     `/admin/coaches/${coachId}/status`,
     {
       method: "PUT",
-      body: JSON.stringify({ status: action }),
+      body: JSON.stringify(body),
     },
     token,
   );

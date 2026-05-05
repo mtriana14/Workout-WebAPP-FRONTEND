@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { BadgeCheck, Briefcase, Search, UserX } from "lucide-react";
 
 import { AdminPortalShell } from "@/app/components/adminPortalShell";
@@ -25,6 +26,8 @@ export default function AdminCoachesPage() {
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [rejectingCoach, setRejectingCoach] = useState<AdminCoachRecord | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
 
   async function loadCoaches() {
     const token = getStoredAuthToken();
@@ -85,6 +88,7 @@ export default function AdminCoachesPage() {
   }
 
   return (
+    <>
     <AdminPortalShell
       activePage="coaches"
       title="COACHES"
@@ -183,7 +187,7 @@ export default function AdminCoachesPage() {
                       <button
                         type="button"
                         className="hh-portal-button hh-portal-button--secondary"
-                        onClick={() => withToken((token) => processAdminCoach(token, coach.coach_id, "rejected"))}
+                        onClick={() => { setRejectingCoach(coach); setRejectReason(""); }}
                       >
                         Reject
                       </button>
@@ -227,5 +231,64 @@ export default function AdminCoachesPage() {
         )}
       </div>
     </AdminPortalShell>
+
+      {rejectingCoach && createPortal(
+        <div
+          style={{
+            position: "fixed", inset: 0, zIndex: 2000,
+            backgroundColor: "rgba(0,0,0,0.6)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}
+          onClick={() => setRejectingCoach(null)}
+        >
+          <div
+            className="hh-card"
+            style={{ width: 440, maxWidth: "90vw", display: "flex", flexDirection: "column", gap: 16 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ margin: 0, color: "var(--hh-text-primary)", fontSize: 16, fontWeight: 600 }}>
+              Reject — {rejectingCoach.name}
+            </h3>
+            <p style={{ margin: 0, fontSize: 13, color: "var(--hh-text-muted)" }}>
+              This reason will be sent to the applicant as a notification.
+            </p>
+            <div className="hh-field">
+              <label className="hh-field__label">Reason</label>
+              <textarea
+                className="hh-input"
+                rows={4}
+                placeholder="e.g. Incomplete certifications, insufficient experience..."
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                style={{ resize: "vertical", minHeight: 96, paddingTop: 10 }}
+              />
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button
+                type="button"
+                className="hh-portal-button hh-portal-button--ghost"
+                onClick={() => setRejectingCoach(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="hh-portal-button hh-portal-button--secondary"
+                onClick={() => {
+                  const coach = rejectingCoach;
+                  setRejectingCoach(null);
+                  withToken((token) =>
+                    processAdminCoach(token, coach.coach_id, "rejected", rejectReason.trim() || undefined)
+                  );
+                }}
+              >
+                Confirm rejection
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+    </>
   );
 }

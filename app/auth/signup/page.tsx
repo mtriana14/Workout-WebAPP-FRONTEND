@@ -12,8 +12,11 @@ import {
   signupRequest,
   storeAuthSession,
 } from "@/app/lib/api";
+import { useAuthStore } from "@/store/authStore";
+import type { AuthUser } from "@/types/auth";
 
 export default function CreateAccountPage() {
+  const setAuth = useAuthStore((state) => state.setAuth);
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -34,6 +37,7 @@ export default function CreateAccountPage() {
     try {
       const response = await googleSignInRequest(credentialResponse.credential);
       storeAuthSession({ token: response.token, user: response.user });
+      setAuth(response.token, response.user as AuthUser);
       window.location.assign("/auth/onboarding");
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "Google sign-in failed.");
@@ -72,10 +76,8 @@ export default function CreateAccountPage() {
 
     try {
       const response = await signupRequest(nextFirstName, nextLastName, nextEmail, password);
-      storeAuthSession({
-        token: response.token,
-        user: response.user,
-      });      
+      storeAuthSession({ token: response.token, user: response.user });
+      setAuth(response.token, response.user as AuthUser);
       window.location.assign("/auth/onboarding");
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "Unable to create account.");

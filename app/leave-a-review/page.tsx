@@ -20,10 +20,10 @@ export default function LeaveReviewPage() {
   useEffect(() => {
     const loadCoaches = async () => {
       try {
-        const response = await billingService.getCoaches();
+        const response = await billingService.getMyCoaches(false);
         setCoaches(response.coaches);
         if (response.coaches[0]) {
-          setCoachId(String(response.coaches[0].coach_id));
+          setCoachId(String(response.coaches[0].user_id ?? response.coaches[0].coach_id));
         }
       } catch (error) {
         setStatus({ type: "error", message: error instanceof Error ? error.message : "Unable to load coaches." });
@@ -58,30 +58,38 @@ export default function LeaveReviewPage() {
 
   return (
     <MemberPortalShell activePage="reviews" title="LEAVE A REVIEW" subtitle="Rate a coach and share feedback for other clients.">
-      <form className="hh-card" onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 680 }}>
-        {status ? <p className={status.type === "error" ? "hh-error-msg" : "hh-text-green"}>{status.message}</p> : null}
-        <div className="hh-field">
-          <label className="hh-field__label">Coach</label>
-          <select className="hh-input" value={coachId} onChange={(event) => setCoachId(event.target.value)} style={{ appearance: "auto" }} required>
-            {coaches.map((coach) => (
-              <option key={coach.coach_id} value={coach.coach_id}>{coach.name}</option>
-            ))}
-          </select>
+      {coaches.length === 0 && !status ? (
+        <div className="hh-card" style={{ maxWidth: 680 }}>
+          <p style={{ color: "var(--hh-text-muted)", fontSize: 14 }}>
+            You haven't worked with any coaches yet. Find and hire a coach to leave a review.
+          </p>
         </div>
-        <div className="hh-field">
-          <label className="hh-field__label">Rating</label>
-          <select className="hh-input" value={rating} onChange={(event) => setRating(event.target.value)} style={{ appearance: "auto" }}>
-            {[5, 4, 3, 2, 1].map((value) => <option key={value} value={value}>{value} stars</option>)}
-          </select>
-        </div>
-        <div className="hh-field">
-          <label className="hh-field__label">Review</label>
-          <textarea className="hh-input" value={comment} onChange={(event) => setComment(event.target.value)} style={{ minHeight: 140, resize: "vertical", paddingTop: 12 }} required />
-        </div>
-        <button className="btn btn--primary" type="submit" disabled={saving}>
-          {saving ? "Submitting..." : "Submit Review"}
-        </button>
-      </form>
+      ) : (
+        <form className="hh-card" onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 680 }}>
+          {status ? <p className={status.type === "error" ? "hh-error-msg" : "hh-text-green"}>{status.message}</p> : null}
+          <div className="hh-field">
+            <label className="hh-field__label">Coach</label>
+            <select className="hh-input" value={coachId} onChange={(event) => setCoachId(event.target.value)} style={{ appearance: "auto" }} required>
+              {coaches.map((coach) => (
+                <option key={coach.coach_id} value={coach.user_id ?? coach.coach_id}>{coach.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="hh-field">
+            <label className="hh-field__label">Rating</label>
+            <select className="hh-input" value={rating} onChange={(event) => setRating(event.target.value)} style={{ appearance: "auto" }}>
+              {[5, 4, 3, 2, 1].map((value) => <option key={value} value={value}>{value} stars</option>)}
+            </select>
+          </div>
+          <div className="hh-field">
+            <label className="hh-field__label">Review</label>
+            <textarea className="hh-input" value={comment} onChange={(event) => setComment(event.target.value)} style={{ minHeight: 140, resize: "vertical", paddingTop: 12 }} required />
+          </div>
+          <button className="btn btn--primary" type="submit" disabled={saving}>
+            {saving ? "Submitting..." : "Submit Review"}
+          </button>
+        </form>
+      )}
     </MemberPortalShell>
   );
 }

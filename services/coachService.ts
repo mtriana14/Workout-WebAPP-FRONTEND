@@ -30,19 +30,19 @@ export const coachService = {
   getPending: () =>
     apiClient<PendingCoachesResponse>("admin/coaches/pending", { method: "GET" }),
 
-  updateStatus: (coachId: number, action: string) =>
+  updateStatus: (coachId: number, action: string, reason?: string) =>
     apiClient<MessageResponse>(`admin/coaches/${coachId}/status`, {
       method: "PUT",
-      body: { status: action },
+      body: { status: action, ...(reason ? { reason } : {}) },
     }),
 
-  processRegistration: (regId: number, action: "approved" | "rejected") =>
+  processRegistration: (regId: number, action: "approved" | "rejected", reason?: string) =>
     apiClient<MessageResponse>(`admin/coaches/${regId}/process`, {
       method: "PUT",
       body: {
         action,
         cost: 0,
-        rejection_reason: action === "rejected" ? "Rejected by admin" : undefined,
+        rejection_reason: action === "rejected" ? (reason ?? "Rejected by admin") : undefined,
       },
     }),
 

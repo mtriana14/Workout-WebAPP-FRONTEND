@@ -29,6 +29,8 @@ export interface UserProfile {
   role: string;
   phone: string | null;
   profile_photo: string | null;
+  weight: number | null;
+  height: number | null;
 }
 
 export interface CoachProfile extends UserProfile {
@@ -54,6 +56,8 @@ function normalizeUser(row: UserRow | Record<string, unknown>): UserProfile {
       role: String(row[6] ?? "client"),
       phone: row[11] ? String(row[11]) : null,
       profile_photo: row[12] ? String(row[12]) : null,
+      weight: row[9] != null ? Number(row[9]) : null,
+      height: row[10] != null ? Number(row[10]) : null,
     };
   }
 
@@ -67,6 +71,8 @@ function normalizeUser(row: UserRow | Record<string, unknown>): UserProfile {
     role: String(row.role ?? "client"),
     phone: row.phone ? String(row.phone) : null,
     profile_photo: row.profile_photo ? String(row.profile_photo) : null,
+    weight: row.weight != null ? Number(row.weight) : null,
+    height: row.height != null ? Number(row.height) : null,
   };
 }
 
@@ -80,16 +86,48 @@ export const profileService = {
   },
 
   updateUser: async (_userId: number, payload: Partial<UserProfile>) => {
+    const body: Record<string, unknown> = {
+      first_name: payload.first_name,
+      last_name: payload.last_name,
+      email: payload.email,
+      phone: payload.phone,
+    };
+    if (payload.weight != null) body.weight = payload.weight;
+    if (payload.height != null) body.height = payload.height;
     const response = await apiClient<{ Success?: string; message?: string }>("auth/update", {
       method: "PATCH",
-      body: {
-        first_name: payload.first_name,
-        last_name: payload.last_name,
-        email: payload.email,
-        phone: payload.phone,
-      },
+      body,
     });
     return { message: response.Success ?? response.message ?? "Profile updated" };
+  },
+
+  getFitnessGoal: async (): Promise<{ goal_id: number; goal_type: string } | null> => {
+    try {
+      const data = await apiClient<{ Goals: Array<{ goal_id: number; goal_type: string; status: string }> }>(
+        "fitnessgoal",
+        { method: "GET" },
+      );
+      if (!data?.Goals?.length) return null;
+      const active = data.Goals.find((g) => g.status === "active") ?? data.Goals[0];
+      return { goal_id: active.goal_id, goal_type: active.goal_type };
+    } catch {
+      return null;
+    }
+  },
+
+  upsertFitnessGoal: async (goalText: string, existingGoalId: number | null): Promise<void> => {
+    if (!goalText.trim()) return;
+    if (existingGoalId) {
+      await apiClient(`fitnessgoal/${existingGoalId}`, {
+        method: "PATCH",
+        body: { goal_type: goalText },
+      });
+    } else {
+      await apiClient("fitnessgoal", {
+        method: "POST",
+        body: { goal_type: goalText },
+      });
+    }
   },
 
   uploadPhoto: (file: File) => {

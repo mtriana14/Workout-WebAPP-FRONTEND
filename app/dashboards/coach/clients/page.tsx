@@ -157,6 +157,21 @@ export default function CoachClientsPage() {
                     >
                       {client.client_email ?? "No email provided"}
                     </p>
+                    {client.fitness_goal ? (
+                      <p
+                        style={{
+                          margin: "10px 0 0",
+                          fontSize: 13,
+                          color: "var(--hh-text-primary)",
+                          background: "var(--hh-bg-card-dark)",
+                          borderRadius: 6,
+                          padding: "6px 10px",
+                          borderLeft: "2px solid var(--hh-accent)",
+                        }}
+                      >
+                        {client.fitness_goal}
+                      </p>
+                    ) : null}
                     <p
                       style={{
                         margin: "12px 0 0",

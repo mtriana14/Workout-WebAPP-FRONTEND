@@ -35,7 +35,7 @@ interface MemberPortalShellProps {
 const MOBILE_LINKS = [
   { label: "Dashboard", href: "/dashboards/client" },
   { label: "Progress Photos", href: "/dashboards/client/progress/photos" },
-  { label: "Invoices", href: "/my-invoices" },
+  { label: "Billing", href: "/billing" },
 ];
 
 export function MemberPortalShell({

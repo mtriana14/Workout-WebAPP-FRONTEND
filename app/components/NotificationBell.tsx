@@ -13,6 +13,7 @@ export function NotificationBell({ userId }: Props) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   // Poll unread count every 30s
@@ -56,6 +57,12 @@ export function NotificationBell({ userId }: Props) {
   };
 
   const handleMarkRead = async (n: AppNotification) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(n.id)) next.delete(n.id);
+      else next.add(n.id);
+      return next;
+    });
     if (n.is_read) return;
     try {
       await notificationService.markRead(n.id);
@@ -211,7 +218,7 @@ export function NotificationBell({ userId }: Props) {
                   style={{
                     padding: "12px 16px",
                     borderBottom: "1px solid var(--hh-border)",
-                    cursor: n.is_read ? "default" : "pointer",
+                    cursor: "pointer",
                     backgroundColor: n.is_read
                       ? "transparent"
                       : "rgba(139, 92, 246, 0.06)",
@@ -252,9 +259,14 @@ export function NotificationBell({ userId }: Props) {
                         fontSize: 12,
                         color: "var(--hh-text-muted)",
                         lineHeight: 1.4,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
+                        ...(expandedIds.has(n.id)
+                          ? {}
+                          : {
+                              display: "-webkit-box",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical" as const,
+                              overflow: "hidden",
+                            }),
                       }}
                     >
                       {n.message}

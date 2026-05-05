@@ -9,6 +9,7 @@ export interface ClientRequest {
   message: string | null;
   status: "pending" | "accepted" | "declined";
   is_active: boolean;
+  fitness_goal?: string | null;
   responded_at: string | null;
   created_at: string;
 }

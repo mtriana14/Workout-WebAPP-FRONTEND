@@ -18,6 +18,9 @@ const EMPTY_FORM = {
   email: "",
   phone: "",
   profile_photo: "",
+  weight: "",
+  height: "",
+  fitness_goal: "",
 };
 
 export default function ClientProfile() {
@@ -25,6 +28,7 @@ export default function ClientProfile() {
   const userId = user?.id ?? user?.user_id;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [goalId, setGoalId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
@@ -37,14 +41,21 @@ export default function ClientProfile() {
 
     const loadProfile = async () => {
       try {
-        const { user: u } = await profileService.getUser(Number(userId));
+        const [{ user: u }, goal] = await Promise.all([
+          profileService.getUser(Number(userId)),
+          profileService.getFitnessGoal(),
+        ]);
         setForm({
           first_name: u.first_name ?? "",
           last_name: u.last_name ?? "",
           email: u.email ?? "",
           phone: u.phone ?? "",
           profile_photo: u.profile_photo ?? "",
+          weight: u.weight != null ? String(u.weight) : "",
+          height: u.height != null ? String(u.height) : "",
+          fitness_goal: goal?.goal_type ?? "",
         });
+        setGoalId(goal?.goal_id ?? null);
       } catch {
         setForm({
           ...EMPTY_FORM,
@@ -68,13 +79,23 @@ export default function ClientProfile() {
 
     try {
       setSaving(true);
-      const response = await profileService.updateUser(Number(userId), {
-        first_name: form.first_name,
-        last_name: form.last_name,
-        email: form.email,
-        phone: form.phone,
-      });
-      setStatus({ type: "success", message: response.message });
+
+      const weightNum = form.weight ? parseFloat(form.weight) : undefined;
+      const heightNum = form.height ? parseFloat(form.height) : undefined;
+
+      await Promise.all([
+        profileService.updateUser(Number(userId), {
+          first_name: form.first_name,
+          last_name: form.last_name,
+          email: form.email,
+          phone: form.phone,
+          ...(weightNum != null && { weight: weightNum }),
+          ...(heightNum != null && { height: heightNum }),
+        }),
+        profileService.upsertFitnessGoal(form.fitness_goal, goalId),
+      ]);
+
+      setStatus({ type: "success", message: "Profile saved." });
     } catch (error) {
       setStatus({ type: "error", message: error instanceof Error ? error.message : "Unable to save profile." });
     } finally {
@@ -132,7 +153,7 @@ export default function ClientProfile() {
         <div className="hh-dash-content" style={{ maxWidth: 680 }}>
           <div>
             <h1 className="hh-page-title">PROFILE</h1>
-            <p className="hh-page-subtitle">Your account information</p>
+            <p className="hh-page-subtitle">Your personal information</p>
           </div>
 
           <div className="hh-card">
@@ -184,12 +205,12 @@ export default function ClientProfile() {
                   Upload Photo
                 </button>
                 <p style={{ fontSize: "var(--hh-fs-12)", color: "var(--hh-text-muted)", marginTop: 4 }}>
-                  JPG or PNG, shown to your coach.
+                  JPG, PNG up to 5MB
                 </p>
               </div>
             </div>
 
-            {/* Fields */}
+            {/* Name */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
               <div className="hh-field">
                 <label className="hh-field__label">First Name</label>
@@ -209,6 +230,7 @@ export default function ClientProfile() {
               </div>
             </div>
 
+            {/* Email */}
             <div className="hh-field" style={{ marginBottom: 16 }}>
               <label className="hh-field__label">Email</label>
               <input
@@ -219,13 +241,55 @@ export default function ClientProfile() {
               />
             </div>
 
-            <div className="hh-field" style={{ marginBottom: 24 }}>
+            {/* Phone */}
+            <div className="hh-field" style={{ marginBottom: 16 }}>
               <label className="hh-field__label">Phone</label>
               <input
                 className="hh-input hh-input--no-icon-left hh-input--no-icon-right"
                 value={form.phone}
                 onChange={(e) => setForm((c) => ({ ...c, phone: e.target.value }))}
                 placeholder="Optional"
+              />
+            </div>
+
+            {/* Weight & Height */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+              <div className="hh-field">
+                <label className="hh-field__label">Weight (lbs)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  className="hh-input hh-input--no-icon-left hh-input--no-icon-right"
+                  value={form.weight}
+                  onChange={(e) => setForm((c) => ({ ...c, weight: e.target.value }))}
+                  placeholder="e.g. 165"
+                />
+              </div>
+              <div className="hh-field">
+                <label className="hh-field__label">Height (in)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  className="hh-input hh-input--no-icon-left hh-input--no-icon-right"
+                  value={form.height}
+                  onChange={(e) => setForm((c) => ({ ...c, height: e.target.value }))}
+                  placeholder="e.g. 68"
+                />
+              </div>
+            </div>
+
+            {/* Fitness Goal */}
+            <div className="hh-field" style={{ marginBottom: 24 }}>
+              <label className="hh-field__label">Fitness Goal</label>
+              <textarea
+                className="hh-input hh-input--no-icon-left hh-input--no-icon-right"
+                rows={3}
+                value={form.fitness_goal}
+                onChange={(e) => setForm((c) => ({ ...c, fitness_goal: e.target.value }))}
+                placeholder="Describe your fitness goal..."
+                style={{ resize: "vertical", minHeight: 80 }}
               />
             </div>
 

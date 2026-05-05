@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Dumbbell, Calendar, Ruler, Scale, UserCircle } from "lucide-react";
+import { Dumbbell, Calendar, Ruler, Scale, UserCircle, Target } from "lucide-react";
 
 import {
   getStoredAuthToken,
@@ -10,13 +10,15 @@ import {
   getDashboardRouteForRole,
   updateCurrentProfile,
 } from "@/app/lib/api";
+import { apiClient } from "@/lib/api";
 
 export default function OnboardingPage() {
   const [dob, setDob] = useState("");
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
   const [gender, setGender] = useState("prefer_not_to_say");
-  
+  const [fitnessGoal, setFitnessGoal] = useState("");
+
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -50,7 +52,14 @@ export default function OnboardingPage() {
       };
 
       await updateCurrentProfile(token, payload);
-      
+
+      if (fitnessGoal.trim()) {
+        await apiClient("fitnessgoal", {
+          method: "POST",
+          body: { goal_type: fitnessGoal.trim() },
+        });
+      }
+
       window.location.assign(getDashboardRouteForRole(session.user.role));
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "Failed to save profile.");
@@ -136,10 +145,10 @@ export default function OnboardingPage() {
               <label htmlFor="gender" className="hh-field__label">Gender</label>
               <div className="hh-input-wrap">
                 <UserCircle size={16} className="hh-input-wrap__icon" color="var(--hh-text-muted)" />
-                <select 
-                  id="gender" 
-                  className="hh-input" 
-                  value={gender} 
+                <select
+                  id="gender"
+                  className="hh-input"
+                  value={gender}
                   onChange={(e) => setGender(e.target.value)}
                   style={{ appearance: "auto", cursor: "pointer" }}
                 >
@@ -148,6 +157,22 @@ export default function OnboardingPage() {
                   <option value="female">Female</option>
                   <option value="other">Other</option>
                 </select>
+              </div>
+            </div>
+
+            <div className="hh-field">
+              <label htmlFor="fitnessGoal" className="hh-field__label">Fitness Goal <span style={{ color: "var(--hh-text-muted)", fontWeight: 400 }}>(optional)</span></label>
+              <div className="hh-input-wrap" style={{ alignItems: "flex-start" }}>
+                <Target size={16} className="hh-input-wrap__icon" color="var(--hh-text-muted)" style={{ marginTop: 12 }} />
+                <textarea
+                  id="fitnessGoal"
+                  className="hh-input"
+                  rows={3}
+                  placeholder="e.g. Build lean muscle while improving recovery consistency."
+                  value={fitnessGoal}
+                  onChange={(e) => setFitnessGoal(e.target.value)}
+                  style={{ resize: "vertical", minHeight: 72 }}
+                />
               </div>
             </div>
 
