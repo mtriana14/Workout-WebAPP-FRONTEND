@@ -10,7 +10,7 @@ import { chatService, ChatMessage, Conversation } from "@/services/chatService";
 import { clientRequestService } from "@/services/ClientRequest";
 import { useAuthStore } from "@/store/authStore";
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
+const SOCKET_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000").replace(/\/api\/?$/, "");
 
 interface ConversationWithName extends Conversation {
   client_name: string;
@@ -31,12 +31,16 @@ export default function CoachChat() {
   useEffect(() => {
     if (!coachUserId) return;
 
+    let cleanedUp = false;
+
     const loadConversations = async () => {
       try {
         const [convoRes, requestsRes] = await Promise.all([
           chatService.getConversations(),
           clientRequestService.getAll(Number(coachUserId)),
         ]);
+
+        if (cleanedUp) return;
 
         const nameMap = new Map<number, string>();
         for (const req of requestsRes.requests ?? []) {
@@ -52,20 +56,22 @@ export default function CoachChat() {
 
         setConversations(enriched);
 
-        if (enriched.length > 0) {
+        if (enriched.length > 0 && !cleanedUp) {
           await selectConversation(enriched[0]);
         }
       } catch (err) {
         console.error("Failed to load conversations", err);
       } finally {
-        setLoading(false);
+        if (!cleanedUp) setLoading(false);
       }
     };
 
     void loadConversations();
 
     return () => {
+      cleanedUp = true;
       socketRef.current?.disconnect();
+      socketRef.current = null;
     };
   }, [coachUserId]);
 
@@ -80,13 +86,17 @@ export default function CoachChat() {
     setMessages(msgs);
 
     if (socketRef.current) {
+      socketRef.current.off("new_message");
+      socketRef.current.off("connect");
       socketRef.current.disconnect();
     }
 
     const socket = io(SOCKET_URL, { transports: ["websocket", "polling"] });
     socketRef.current = socket;
 
-    socket.emit("join", { conversation_id: convo.MessageList_id });
+    socket.on("connect", () => {
+      socket.emit("join", { conversation_id: convo.MessageList_id });
+    });
     socket.on("new_message", (msg: ChatMessage) => {
       setMessages((prev) => [...prev, msg]);
     });

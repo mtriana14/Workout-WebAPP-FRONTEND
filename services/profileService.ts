@@ -31,6 +31,7 @@ export interface UserProfile {
   profile_photo: string | null;
   weight: number | null;
   height: number | null;
+  date_of_birth: string | null;
 }
 
 export interface CoachProfile extends UserProfile {
@@ -43,6 +44,17 @@ export interface CoachProfile extends UserProfile {
   hourly_rate: number | null;
   bio: string | null;
   status: string;
+}
+
+function parseISODate(val: unknown): string | null {
+  if (!val) return null;
+  const s = String(val);
+  // Already YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  // Try to parse any other format (e.g. 'Tue, 22 Apr 2025 00:00:00 GMT')
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return null;
+  return d.toISOString().slice(0, 10);
 }
 
 function normalizeUser(row: UserRow | Record<string, unknown>): UserProfile {
@@ -58,6 +70,7 @@ function normalizeUser(row: UserRow | Record<string, unknown>): UserProfile {
       profile_photo: row[12] ? String(row[12]) : null,
       weight: row[9] != null ? Number(row[9]) : null,
       height: row[10] != null ? Number(row[10]) : null,
+      date_of_birth: parseISODate(row[13]),
     };
   }
 
@@ -73,6 +86,7 @@ function normalizeUser(row: UserRow | Record<string, unknown>): UserProfile {
     profile_photo: row.profile_photo ? String(row.profile_photo) : null,
     weight: row.weight != null ? Number(row.weight) : null,
     height: row.height != null ? Number(row.height) : null,
+    date_of_birth: parseISODate(row.date_of_birth),
   };
 }
 
@@ -94,6 +108,7 @@ export const profileService = {
     };
     if (payload.weight != null) body.weight = payload.weight;
     if (payload.height != null) body.height = payload.height;
+    if (payload.date_of_birth && /^\d{4}-\d{2}-\d{2}$/.test(payload.date_of_birth)) body.date_of_birth = payload.date_of_birth;
     const response = await apiClient<{ Success?: string; message?: string }>("auth/update", {
       method: "PATCH",
       body,

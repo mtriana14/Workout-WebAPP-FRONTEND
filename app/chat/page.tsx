@@ -8,7 +8,7 @@ import { chatService, ChatMessage, Conversation } from "@/services/chatService";
 import { clientDashboardService } from "@/services/clientDashboardService";
 import { useAuthStore } from "@/store/authStore";
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
+const SOCKET_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000").replace(/\/api\/?$/, "");
 
 export default function ClientChatPage() {
   const { user } = useAuthStore();
@@ -26,11 +26,15 @@ export default function ClientChatPage() {
   useEffect(() => {
     if (!userId) return;
 
+    let cleanedUp = false;
+    let localSocket: Socket | null = null;
+
     const init = async () => {
       try {
         setStatus("loading");
 
         const coachData = await clientDashboardService.getMyCoach(Number(userId));
+        if (cleanedUp) return;
         if (!coachData.coach) {
           setStatus("no-coach");
           return;
@@ -39,16 +43,21 @@ export default function ClientChatPage() {
         setCoachName(coachData.coach.name);
         const coachUserId = coachData.coach.user_id;
         const convoRes = await chatService.getOrCreateConversation(coachUserId);
+        if (cleanedUp) return;
         const convo = convoRes.Conversation;
         setConversation(convo);
 
         const msgs = await chatService.getMessages(convo.MessageList_id);
+        if (cleanedUp) return;
         setMessages(msgs);
 
         const socket = io(SOCKET_URL, { transports: ["websocket", "polling"] });
+        localSocket = socket;
         socketRef.current = socket;
 
-        socket.emit("join", { conversation_id: convo.MessageList_id });
+        socket.on("connect", () => {
+          socket.emit("join", { conversation_id: convo.MessageList_id });
+        });
 
         socket.on("new_message", (msg: ChatMessage) => {
           setMessages((prev) => [...prev, msg]);
@@ -56,15 +65,21 @@ export default function ClientChatPage() {
 
         setStatus("ready");
       } catch (err) {
-        setErrorMsg(err instanceof Error ? err.message : "Failed to load chat.");
-        setStatus("error");
+        if (!cleanedUp) {
+          setErrorMsg(err instanceof Error ? err.message : "Failed to load chat.");
+          setStatus("error");
+        }
       }
     };
 
     void init();
 
     return () => {
-      socketRef.current?.disconnect();
+      cleanedUp = true;
+      localSocket?.off("new_message");
+      localSocket?.off("connect");
+      localSocket?.disconnect();
+      socketRef.current = null;
     };
   }, [userId]);
 

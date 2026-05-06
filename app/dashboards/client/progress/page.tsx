@@ -239,9 +239,13 @@ export default function ProgressPage() {
                       type="number"
                       step="0.1"
                       min="0"
+                      max="999"
                       className="hh-input hh-input--no-icon-left hh-input--no-icon-right"
                       value={form.weight}
-                      onChange={(event) => setForm((current) => ({ ...current, weight: event.target.value }))}
+                      onChange={(event) => {
+                        const v = event.target.value;
+                        if (v === "" || /^\d{0,3}(\.\d*)?$/.test(v)) setForm((current) => ({ ...current, weight: v }));
+                      }}
                       placeholder="Optional"
                     />
                   </div>

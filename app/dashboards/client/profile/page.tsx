@@ -20,6 +20,7 @@ const EMPTY_FORM = {
   profile_photo: "",
   weight: "",
   height: "",
+  date_of_birth: "",
   fitness_goal: "",
 };
 
@@ -53,6 +54,7 @@ export default function ClientProfile() {
           profile_photo: u.profile_photo ?? "",
           weight: u.weight != null ? String(u.weight) : "",
           height: u.height != null ? String(u.height) : "",
+          date_of_birth: u.date_of_birth ?? "",
           fitness_goal: goal?.goal_type ?? "",
         });
         setGoalId(goal?.goal_id ?? null);
@@ -91,6 +93,7 @@ export default function ClientProfile() {
           phone: form.phone,
           ...(weightNum != null && { weight: weightNum }),
           ...(heightNum != null && { height: heightNum }),
+          ...(form.date_of_birth && { date_of_birth: form.date_of_birth }),
         }),
         profileService.upsertFitnessGoal(form.fitness_goal, goalId),
       ]);
@@ -252,6 +255,21 @@ export default function ClientProfile() {
               />
             </div>
 
+            {/* Date of Birth */}
+            <div className="hh-field" style={{ marginBottom: 16 }}>
+              <label className="hh-field__label">Date of Birth</label>
+              <input
+                type="date"
+                className="hh-input hh-input--no-icon-left hh-input--no-icon-right"
+                max="9999-12-31"
+                value={form.date_of_birth}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (!v || v.split("-")[0].length <= 4) setForm((c) => ({ ...c, date_of_birth: v }));
+                }}
+              />
+            </div>
+
             {/* Weight & Height */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
               <div className="hh-field">
@@ -259,10 +277,14 @@ export default function ClientProfile() {
                 <input
                   type="number"
                   min="0"
+                  max="999"
                   step="0.1"
                   className="hh-input hh-input--no-icon-left hh-input--no-icon-right"
                   value={form.weight}
-                  onChange={(e) => setForm((c) => ({ ...c, weight: e.target.value }))}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === "" || /^\d{0,3}(\.\d*)?$/.test(v)) setForm((c) => ({ ...c, weight: v }));
+                  }}
                   placeholder="e.g. 165"
                 />
               </div>
@@ -271,10 +293,14 @@ export default function ClientProfile() {
                 <input
                   type="number"
                   min="0"
+                  max="999"
                   step="0.1"
                   className="hh-input hh-input--no-icon-left hh-input--no-icon-right"
                   value={form.height}
-                  onChange={(e) => setForm((c) => ({ ...c, height: e.target.value }))}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === "" || /^\d{0,3}(\.\d*)?$/.test(v)) setForm((c) => ({ ...c, height: v }));
+                  }}
                   placeholder="e.g. 68"
                 />
               </div>

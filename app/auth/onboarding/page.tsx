@@ -101,8 +101,12 @@ export default function OnboardingPage() {
                   id="dob"
                   type="date"
                   className="hh-input"
+                  max="9999-12-31"
                   value={dob}
-                  onChange={(e) => setDob(e.target.value)}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (!v || v.split("-")[0].length <= 4) setDob(v);
+                  }}
                 />
               </div>
             </div>
@@ -116,10 +120,14 @@ export default function OnboardingPage() {
                     id="height"
                     type="number"
                     step="0.1"
+                    max="999"
                     placeholder="e.g. 70.5"
                     className="hh-input"
                     value={height}
-                    onChange={(e) => setHeight(e.target.value)}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === "" || /^\d{0,3}(\.\d*)?$/.test(v)) setHeight(v);
+                    }}
                   />
                 </div>
               </div>
@@ -132,10 +140,14 @@ export default function OnboardingPage() {
                     id="weight"
                     type="number"
                     step="0.1"
+                    max="999"
                     placeholder="e.g. 165.0"
                     className="hh-input"
                     value={weight}
-                    onChange={(e) => setWeight(e.target.value)}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === "" || /^\d{0,3}(\.\d*)?$/.test(v)) setWeight(v);
+                    }}
                   />
                 </div>
               </div>

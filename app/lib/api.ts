@@ -224,6 +224,21 @@ export async function updateCurrentProfile(token: string, profile: any) {
     }
   }
 
+  if (profile.height !== undefined) {
+    const numericHeight = parseFloat(String(profile.height).replace(/[^0-9.]/g, ''));
+    if (!isNaN(numericHeight)) {
+      backendPayload.height = numericHeight;
+    }
+  }
+
+  if (profile.date_of_birth !== undefined && profile.date_of_birth !== null) {
+    backendPayload.date_of_birth = profile.date_of_birth;
+  }
+
+  if (profile.gender !== undefined && profile.gender !== null) {
+    backendPayload.gender = profile.gender;
+  }
+
   // FIX 3: The Dual-Route Fallback Strategy
   try {
     // Attempt 1: Try hitting the new JWT route you added to auth_controller.py
@@ -371,9 +386,11 @@ export function applyForCoachRequest(token: string, payload: { specialty: string
   }, token);
 }
 
-export function fakePasswordResetRequest(email: string) {
-  // Skeleton API call for UC 1.11
-  return new Promise((resolve) => setTimeout(resolve, 1500));
+export function resetPasswordRequest(email: string, newPassword: string) {
+  return apiRequest<{ message: string }>("/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ email, new_password: newPassword }),
+  });
 }
 
 export function logStrengthRequest(token: string, payload: any) {

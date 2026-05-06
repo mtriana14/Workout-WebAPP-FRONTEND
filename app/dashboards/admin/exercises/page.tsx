@@ -378,7 +378,7 @@ export default function ExercisesPage() {
             </div>
             <span className="hh-logo__text hh-logo__text--md">HeraHealth</span>
           </a>
-          <span className="hh-badge hh-badge--sm">Client Portal</span>
+          <span className="hh-badge hh-badge--sm">Admin Portal</span>
         </div>
 
         <NavComponent NAV_ITEMS={NAV_ITEMS_ADMIN} />

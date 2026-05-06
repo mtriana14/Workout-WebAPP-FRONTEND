@@ -75,7 +75,7 @@ export default function PaymentsPage() {
             </div>
             <span className="hh-logo__text hh-logo__text--md">HeraHealth</span>
           </a>
-          <span className="hh-badge hh-badge--sm">Client Portal</span>
+          <span className="hh-badge hh-badge--sm">Admin Portal</span>
         </div>
 
         <NavComponent NAV_ITEMS={NAV_ITEMS_ADMIN} />
@@ -302,7 +302,7 @@ export default function PaymentsPage() {
                           </span>
                         </td>
                         <td style={{ padding: "14px 16px", fontSize: 14, color: "var(--hh-text-muted)" }}>
-                          {p.payment_method}
+                          {p.payment_method?.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
                         </td>
                         <td style={{ padding: "14px 16px", fontSize: 14, color: "var(--hh-text-muted)" }}>
                           {new Date(p.created_at).toLocaleDateString()}
