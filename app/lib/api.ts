@@ -730,3 +730,32 @@ export function deleteFitnessGoal(token: string, goalId: number) {
     method: "DELETE",
   }, token);
 }
+
+export interface PublicStats {
+  total_members: number;
+  active_coaches: number;
+  total_reviews: number;
+  top_coaches: {
+    coach_name: string;
+    avg_rating: number;
+    review_count: number;
+    top_comment: string | null;
+    reviewer_name: string | null;
+  }[];
+}
+
+export function fetchPublicStats() {
+  return apiRequest<PublicStats>("/public/stats", { method: "GET" });
+}
+
+export interface PublicExercise {
+  id: number;
+  name: string;
+  muscle_group: string | null;
+  equipment_type: string | null;
+  difficulty: string | null;
+}
+
+export function fetchPublicExercises() {
+  return apiRequest<{ exercises: PublicExercise[] }>("/public/exercises", { method: "GET" });
+}

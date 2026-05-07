@@ -11,6 +11,10 @@ const MUSCLE_GROUPS = [
   "chest", "back", "shoulders", "arms", "legs", "core", "glutes", "full_body"
 ];
 
+function formatMuscleGroup(value: string) {
+  return value.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 const EQUIPMENT_TYPES = [
   "barbell", "dumbbell", "machine", "bodyweight", "cables", "bands", "other"
 ];
@@ -111,8 +115,9 @@ export default function ExercisesPage() {
       }
       setShowModal(false);
       loadExercises();
-    } catch {
-      setFormError("Failed to save exercise.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : undefined;
+      setFormError(msg ?? "Failed to save exercise.");
     } finally {
       setFormLoading(false);
     }
@@ -287,8 +292,8 @@ export default function ExercisesPage() {
                   >
                     <option value="">Select...</option>
                     {MUSCLE_GROUPS.map((m) => (
-                      <option key={m} value={m} style={{ textTransform: "capitalize" }}>
-                        {m.charAt(0).toUpperCase() + m.slice(1)}
+                      <option key={m} value={m}>
+                        {formatMuscleGroup(m)}
                       </option>
                     ))}
                   </select>
@@ -464,7 +469,7 @@ export default function ExercisesPage() {
               <option value="all">All Muscle Groups</option>
               {MUSCLE_GROUPS.map((m) => (
                 <option key={m} value={m}>
-                  {m.charAt(0).toUpperCase() + m.slice(1)}
+                  {formatMuscleGroup(m)}
                 </option>
               ))}
             </select>
@@ -533,8 +538,8 @@ export default function ExercisesPage() {
                             )}
                           </div>
                         </td>
-                        <td style={{ padding: "14px 16px", fontSize: 14, textTransform: "capitalize" }}>
-                          {e.muscle_group}
+                        <td style={{ padding: "14px 16px", fontSize: 14 }}>
+                          {formatMuscleGroup(e.muscle_group ?? "")}
                         </td>
                         <td style={{ padding: "14px 16px", fontSize: 14, color: "var(--hh-text-muted)", textTransform: "capitalize" }}>
                           {e.equipment_type || "—"}

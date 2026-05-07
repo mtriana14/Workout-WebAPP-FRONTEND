@@ -17,7 +17,10 @@ export default function OnboardingPage() {
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
   const [gender, setGender] = useState("prefer_not_to_say");
-  const [fitnessGoal, setFitnessGoal] = useState("");
+  const [goalType, setGoalType] = useState("");
+  const [goalTarget, setGoalTarget] = useState("");
+  const [goalUnit, setGoalUnit] = useState("");
+  const [goalDeadline, setGoalDeadline] = useState("");
 
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -53,10 +56,15 @@ export default function OnboardingPage() {
 
       await updateCurrentProfile(token, payload);
 
-      if (fitnessGoal.trim()) {
+      if (goalType.trim()) {
         await apiClient("fitnessgoal", {
           method: "POST",
-          body: { goal_type: fitnessGoal.trim() },
+          body: {
+            goal_type:    goalType.trim(),
+            target_value: goalTarget ? parseFloat(goalTarget) : null,
+            target_unit:  goalUnit.trim() || null,
+            deadline:     goalDeadline || null,
+          },
         });
       }
 
@@ -173,20 +181,65 @@ export default function OnboardingPage() {
             </div>
 
             <div className="hh-field">
-              <label htmlFor="fitnessGoal" className="hh-field__label">Fitness Goal <span style={{ color: "var(--hh-text-muted)", fontWeight: 400 }}>(optional)</span></label>
-              <div className="hh-input-wrap" style={{ alignItems: "flex-start" }}>
-                <Target size={16} className="hh-input-wrap__icon" color="var(--hh-text-muted)" style={{ marginTop: 12 }} />
-                <textarea
-                  id="fitnessGoal"
+              <label htmlFor="goalType" className="hh-field__label">Fitness Goal <span style={{ color: "var(--hh-text-muted)", fontWeight: 400 }}>(optional)</span></label>
+              <div className="hh-input-wrap">
+                <Target size={16} className="hh-input-wrap__icon" color="var(--hh-text-muted)" />
+                <input
+                  id="goalType"
+                  type="text"
                   className="hh-input"
-                  rows={3}
-                  placeholder="e.g. Build lean muscle while improving recovery consistency."
-                  value={fitnessGoal}
-                  onChange={(e) => setFitnessGoal(e.target.value)}
-                  style={{ resize: "vertical", minHeight: 72 }}
+                  placeholder="e.g. Weight Loss"
+                  value={goalType}
+                  onChange={(e) => setGoalType(e.target.value)}
                 />
               </div>
             </div>
+
+            {goalType.trim() && (
+              <div className="hh-field-row">
+                <div className="hh-field" style={{ flex: 1 }}>
+                  <label htmlFor="goalTarget" className="hh-field__label">Target Value</label>
+                  <input
+                    id="goalTarget"
+                    type="number"
+                    step="0.1"
+                    max="999"
+                    placeholder="e.g. 165"
+                    className="hh-input hh-input--no-icon-left hh-input--no-icon-right"
+                    value={goalTarget}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === "" || /^\d{0,3}(\.\d*)?$/.test(v)) setGoalTarget(v);
+                    }}
+                  />
+                </div>
+                <div className="hh-field" style={{ flex: 1 }}>
+                  <label htmlFor="goalUnit" className="hh-field__label">Unit</label>
+                  <input
+                    id="goalUnit"
+                    type="text"
+                    placeholder="e.g. lbs"
+                    className="hh-input hh-input--no-icon-left hh-input--no-icon-right"
+                    value={goalUnit}
+                    onChange={(e) => setGoalUnit(e.target.value)}
+                  />
+                </div>
+                <div className="hh-field" style={{ flex: 1 }}>
+                  <label htmlFor="goalDeadline" className="hh-field__label">Deadline</label>
+                  <input
+                    id="goalDeadline"
+                    type="date"
+                    max="9999-12-31"
+                    className="hh-input hh-input--no-icon-left hh-input--no-icon-right"
+                    value={goalDeadline}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (!v || v.split("-")[0].length <= 4) setGoalDeadline(v);
+                    }}
+                  />
+                </div>
+              </div>
+            )}
 
             {error ? <p className="hh-error-msg">{error}</p> : null}
 

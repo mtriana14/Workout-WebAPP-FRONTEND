@@ -29,7 +29,6 @@ const EMPTY_FORM = {
   weight:        "",
   height:        "",
   date_of_birth: "",
-  fitness_goal:  "",
 };
 
 const EMPTY_GOAL_FORM = {
@@ -46,7 +45,6 @@ export default function ClientProfile() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm]       = useState(EMPTY_FORM);
-  const [goalId, setGoalId]   = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving]   = useState(false);
   const [status, setStatus]   = useState<{ type: "success" | "error"; message: string } | null>(null);
@@ -83,10 +81,7 @@ export default function ClientProfile() {
 
     const loadProfile = async () => {
       try {
-        const [{ user: u }, goal] = await Promise.all([
-          profileService.getUser(Number(userId)),
-          profileService.getFitnessGoal(),
-        ]);
+        const { user: u } = await profileService.getUser(Number(userId));
         setForm({
           first_name:    u.first_name ?? "",
           last_name:     u.last_name ?? "",
@@ -96,15 +91,17 @@ export default function ClientProfile() {
           weight:        u.weight != null ? String(u.weight) : "",
           height:        u.height != null ? String(u.height) : "",
           date_of_birth: u.date_of_birth ?? "",
-          fitness_goal:  goal?.goal_type ?? "",
         });
-        setGoalId(goal?.goal_id ?? null);
       } catch {
         setForm({
           ...EMPTY_FORM,
-          first_name: user?.first_name ?? user?.firstName ?? "",
-          last_name:  user?.last_name ?? user?.lastName ?? "",
-          email:      user?.email ?? "",
+          first_name:    user?.first_name ?? user?.firstName ?? "",
+          last_name:     user?.last_name ?? user?.lastName ?? "",
+          email:         user?.email ?? "",
+          profile_photo: "",
+          weight:        "",
+          height:        "",
+          date_of_birth: "",
         });
       } finally {
         setLoading(false);
@@ -190,18 +187,15 @@ export default function ClientProfile() {
       setSaving(true);
       const weightNum = form.weight ? parseFloat(form.weight) : undefined;
       const heightNum = form.height ? parseFloat(form.height) : undefined;
-      await Promise.all([
-        profileService.updateUser(Number(userId), {
-          first_name: form.first_name,
-          last_name:  form.last_name,
-          email:      form.email,
-          phone:      form.phone,
-          ...(weightNum != null && { weight: weightNum }),
-          ...(heightNum != null && { height: heightNum }),
-          ...(form.date_of_birth && { date_of_birth: form.date_of_birth }),
-        }),
-        profileService.upsertFitnessGoal(form.fitness_goal, goalId),
-      ]);
+      await profileService.updateUser(Number(userId), {
+        first_name: form.first_name,
+        last_name:  form.last_name,
+        email:      form.email,
+        phone:      form.phone,
+        ...(weightNum != null && { weight: weightNum }),
+        ...(heightNum != null && { height: heightNum }),
+        ...(form.date_of_birth && { date_of_birth: form.date_of_birth }),
+      });
       setStatus({ type: "success", message: "Profile saved." });
     } catch (error) {
       setStatus({ type: "error", message: error instanceof Error ? error.message : "Unable to save profile." });
@@ -332,12 +326,6 @@ export default function ClientProfile() {
               </div>
             </div>
 
-            {/* Fitness Goal (single) */}
-            <div className="hh-field" style={{ marginBottom: 24 }}>
-              <label className="hh-field__label">Fitness Goal</label>
-              <textarea className="hh-input hh-input--no-icon-left hh-input--no-icon-right" rows={3} value={form.fitness_goal} onChange={(e) => setForm((c) => ({ ...c, fitness_goal: e.target.value }))} placeholder="Describe your fitness goal..." style={{ resize: "vertical", minHeight: 80 }} />
-            </div>
-
             <button className="btn btn--primary" onClick={saveProfile} disabled={saving || loading}>
               {saving ? "Saving..." : "Save Profile"}
             </button>
@@ -390,7 +378,7 @@ export default function ClientProfile() {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
                   <div className="hh-field">
                     <label className="hh-field__label">Target Value</label>
-                    <input type="number" className="hh-input hh-input--no-icon-left hh-input--no-icon-right" placeholder="e.g. 185" value={goalForm.target_value} onChange={(e) => setGoalForm((c) => ({ ...c, target_value: e.target.value }))} />
+                    <input type="number" min="0" max="999" step="0.1" className="hh-input hh-input--no-icon-left hh-input--no-icon-right" placeholder="e.g. 185" value={goalForm.target_value} onChange={(e) => { const v = e.target.value; if (v === "" || /^\d{0,3}(\.\d*)?$/.test(v)) setGoalForm((c) => ({ ...c, target_value: v })); }} />
                   </div>
                   <div className="hh-field">
                     <label className="hh-field__label">Unit</label>
@@ -398,7 +386,7 @@ export default function ClientProfile() {
                   </div>
                   <div className="hh-field">
                     <label className="hh-field__label">Deadline</label>
-                    <input type="date" className="hh-input hh-input--no-icon-left hh-input--no-icon-right" value={goalForm.deadline} onChange={(e) => setGoalForm((c) => ({ ...c, deadline: e.target.value }))} />
+                    <input type="date" max="9999-12-31" className="hh-input hh-input--no-icon-left hh-input--no-icon-right" value={goalForm.deadline} onChange={(e) => { const v = e.target.value; if (!v || v.split("-")[0].length <= 4) setGoalForm((c) => ({ ...c, deadline: v })); }} />
                   </div>
                 </div>
 

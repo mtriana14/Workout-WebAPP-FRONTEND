@@ -1,5 +1,16 @@
 import { apiClient } from "@/lib/api";
 
+export interface ClientFitnessGoal {
+  goal_id: number;
+  goal_type: string;
+  target_value: number | null;
+  target_unit: string | null;
+  deadline: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ClientRequest {
   request_id: number;
   client_id: number;
@@ -9,7 +20,7 @@ export interface ClientRequest {
   message: string | null;
   status: "pending" | "accepted" | "declined";
   is_active: boolean;
-  fitness_goal?: string | null;
+  fitness_goal?: ClientFitnessGoal | null;
   responded_at: string | null;
   created_at: string;
 }

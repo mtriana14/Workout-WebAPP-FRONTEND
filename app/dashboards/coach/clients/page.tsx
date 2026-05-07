@@ -8,9 +8,16 @@ import { NAV_ITEMS_COACH } from "@/router/router";
 import {
   clientRequestService,
   type ClientRequest,
+  type ClientFitnessGoal,
 } from "@/services/ClientRequest";
 import { useAuthStore } from "@/store/authStore";
-import { Dumbbell } from "lucide-react";
+import { Dumbbell, ChevronDown, ChevronUp } from "lucide-react";
+
+function statusColor(s: string) {
+  if (s === "active")    return "#22c55e";
+  if (s === "completed") return "#3b82f6";
+  return "#6b7280";
+}
 
 export default function CoachClientsPage() {
   const user = useAuthStore((state) => state.user);
@@ -18,6 +25,7 @@ export default function CoachClientsPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [expandedGoal, setExpandedGoal] = useState<number | null>(null);
 
   useEffect(() => {
     const coachId = user?.id ?? user?.user_id;
@@ -129,61 +137,82 @@ export default function CoachClientsPage() {
             ) : null}
 
             {!loading && !error && filteredClients.length > 0 ? (
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-                  gap: 1,
-                  backgroundColor: "var(--hh-border)",
-                }}
-              >
-                {filteredClients.map((client) => (
-                  <div
-                    key={client.request_id}
-                    style={{
-                      padding: 20,
-                      backgroundColor: "var(--hh-bg-primary)",
-                    }}
-                  >
-                    <p style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>
-                      {client.client_name ?? `Client #${client.client_id}`}
-                    </p>
-                    <p
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                {filteredClients.map((client, idx) => {
+                  const goal = client.fitness_goal as ClientFitnessGoal | null | undefined;
+                  const isExpanded = expandedGoal === client.request_id;
+                  return (
+                    <div
+                      key={client.request_id}
                       style={{
-                        margin: "4px 0 0",
-                        fontSize: 13,
-                        color: "var(--hh-text-muted)",
+                        padding: "16px 20px",
+                        borderTop: idx === 0 ? "none" : "1px solid var(--hh-border)",
                       }}
                     >
-                      {client.client_email ?? "No email provided"}
-                    </p>
-                    {client.fitness_goal ? (
-                      <p
-                        style={{
-                          margin: "10px 0 0",
-                          fontSize: 13,
-                          color: "var(--hh-text-primary)",
-                          background: "var(--hh-bg-card-dark)",
-                          borderRadius: 6,
-                          padding: "6px 10px",
-                          borderLeft: "2px solid var(--hh-accent)",
-                        }}
-                      >
-                        {client.fitness_goal}
-                      </p>
-                    ) : null}
-                    <p
-                      style={{
-                        margin: "12px 0 0",
-                        fontSize: 12,
-                        color: "var(--hh-text-muted)",
-                      }}
-                    >
-                      Client since{" "}
-                      {new Date(client.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                ))}
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <div>
+                          <a
+                            href={`/dashboards/coach/clients/${client.client_id}`}
+                            style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "var(--hh-text-primary)", textDecoration: "none" }}
+                            onMouseEnter={(e) => (e.currentTarget.style.color = "var(--hh-accent)")}
+                            onMouseLeave={(e) => (e.currentTarget.style.color = "var(--hh-text-primary)")}
+                          >
+                            {client.client_name ?? `Client #${client.client_id}`}
+                          </a>
+                          <p style={{ margin: "2px 0 0", fontSize: 13, color: "var(--hh-text-muted)" }}>
+                            {client.client_email ?? "No email provided"}
+                          </p>
+                        </div>
+                        <p style={{ margin: 0, fontSize: 12, color: "var(--hh-text-muted)" }}>
+                          Client since {new Date(client.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+
+                      {goal ? (
+                        <div style={{ marginTop: 10 }}>
+                          <button
+                            onClick={() => setExpandedGoal(isExpanded ? null : client.request_id)}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 6,
+                              background: "var(--hh-bg-card-dark)",
+                              border: "none",
+                              borderLeft: "2px solid var(--hh-accent)",
+                              borderRadius: 6,
+                              padding: "6px 10px",
+                              fontSize: 13,
+                              color: "var(--hh-text-primary)",
+                              cursor: "pointer",
+                              width: "100%",
+                              textAlign: "left",
+                            }}
+                          >
+                            <span style={{ flex: 1 }}>{goal.goal_type}</span>
+                            <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 999, background: `${statusColor(goal.status)}20`, color: statusColor(goal.status), fontWeight: 500 }}>
+                              {goal.status}
+                            </span>
+                            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                          </button>
+
+                          {isExpanded && (
+                            <div style={{ marginTop: 8, padding: "10px 12px", background: "var(--hh-bg-card-dark)", borderRadius: 6, display: "flex", gap: 24, flexWrap: "wrap", fontSize: 13, color: "var(--hh-text-muted)" }}>
+                              {goal.target_value != null && (
+                                <span><strong style={{ color: "var(--hh-text-primary)" }}>Target:</strong> {goal.target_value} {goal.target_unit ?? ""}</span>
+                              )}
+                              {goal.deadline && (
+                                <span><strong style={{ color: "var(--hh-text-primary)" }}>Deadline:</strong> {new Date(goal.deadline).toLocaleDateString()}</span>
+                              )}
+                              <span><strong style={{ color: "var(--hh-text-primary)" }}>Added:</strong> {new Date(goal.created_at).toLocaleDateString()}</span>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p style={{ margin: "8px 0 0", fontSize: 12, color: "var(--hh-text-muted)", fontStyle: "italic" }}>No active goal</p>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             ) : null}
           </div>

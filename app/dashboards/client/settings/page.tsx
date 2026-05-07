@@ -9,6 +9,7 @@ import { NAV_ITEMS_CLIENT } from "@/router/router";
 import { profileService } from "@/services/profileService";
 import { useAuthStore } from "@/store/authStore";
 import { getNotifPrefs, setNotifPrefs } from "@/lib/notificationPrefsStorage";
+import { apiClient } from "@/lib/api";
 
 const CLIENT_NOTIFICATIONS = [
   {
@@ -44,7 +45,7 @@ const CLIENT_NOTIFICATIONS = [
 ];
 
 export default function ClientSettings() {
-  const { user } = useAuthStore();
+  const { user, clearAuth } = useAuthStore();
   const userId = user?.id ?? user?.user_id;
   const [profile, setProfile] = useState({ first_name: "", last_name: "", email: "", phone: "" });
   const [passwords, setPasswords] = useState({ current_password: "", new_password: "", confirm_password: "" });
@@ -53,6 +54,8 @@ export default function ClientSettings() {
   );
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [confirmDeactivate, setConfirmDeactivate] = useState(false);
+  const [deactivating, setDeactivating] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -106,6 +109,20 @@ export default function ClientSettings() {
       setStatus({ type: "error", message: error instanceof Error ? error.message : "Unable to save settings." });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const deactivateAccount = async () => {
+    try {
+      setDeactivating(true);
+      await apiClient("users/me/deactivate", { method: "PATCH" });
+      clearAuth();
+      window.location.assign("/");
+    } catch (err) {
+      setStatus({ type: "error", message: err instanceof Error ? err.message : "Failed to deactivate account." });
+      setConfirmDeactivate(false);
+    } finally {
+      setDeactivating(false);
     }
   };
 
@@ -242,6 +259,43 @@ export default function ClientSettings() {
             >
               Update Password
             </button>
+          </div>
+
+          {/* Danger Zone */}
+          <div className="hh-card" style={{ borderColor: "rgba(239,68,68,0.3)" }}>
+            <h3 className="hh-panel-heading" style={{ color: "var(--hh-error)" }}>Danger Zone</h3>
+            <p style={{ fontSize: 14, color: "var(--hh-text-muted)", marginBottom: 16 }}>
+              Deactivating your account will sign you out and suspend your access. You can reactivate at any time by logging back in.
+            </p>
+            {!confirmDeactivate ? (
+              <button
+                className="btn btn--ghost"
+                style={{ border: "1px solid var(--hh-error)", color: "var(--hh-error)" }}
+                onClick={() => setConfirmDeactivate(true)}
+              >
+                Deactivate Account
+              </button>
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 14, color: "var(--hh-text-primary)" }}>Are you sure?</span>
+                <button
+                  className="btn btn--ghost"
+                  style={{ border: "1px solid var(--hh-error)", color: "var(--hh-error)" }}
+                  onClick={deactivateAccount}
+                  disabled={deactivating}
+                >
+                  {deactivating ? "Deactivating..." : "Yes, deactivate"}
+                </button>
+                <button
+                  className="btn btn--ghost"
+                  style={{ border: "1px solid var(--hh-border)" }}
+                  onClick={() => setConfirmDeactivate(false)}
+                  disabled={deactivating}
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Notifications */}

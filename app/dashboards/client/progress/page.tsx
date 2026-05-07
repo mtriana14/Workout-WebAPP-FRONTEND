@@ -8,6 +8,7 @@ import { NAV_ITEMS_CLIENT } from "@/router/router";
 import { progressService, type ProgressEntry, type ProgressSummary } from "@/services/progressService";
 import { useAuthStore } from "@/store/authStore";
 import { Dumbbell } from "lucide-react";
+import ProgressCharts from "@/components/ProgressCharts";
 
 export default function ProgressPage() {
   const { user } = useAuthStore();
@@ -342,7 +343,7 @@ export default function ProgressPage() {
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                     {entries.slice(0, 6).map((entry) => (
-                      <div key={entry.entry_id} style={{ paddingBottom: 12, borderBottom: "1px solid var(--hh-border)" }}>
+                      <div key={`${entry.entry_date}-${entry.entry_id}`} style={{ paddingBottom: 12, borderBottom: "1px solid var(--hh-border)" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
                           <div>
                             <p style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>
@@ -379,6 +380,13 @@ export default function ProgressPage() {
               </div>
             </div>
           </div>
+
+          {/* ── Charts ── */}
+          <div>
+            <h2 style={{ fontSize: 16, fontWeight: 600, margin: "0 0 16px" }}>Trends</h2>
+            <ProgressCharts entries={entries} loading={loading} />
+          </div>
+
         </div>
       </main>
     </div>

@@ -19,6 +19,7 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+  const [togglingId, setTogglingId] = useState<number | null>(null);
 
   const loadUsers = async () => {
     try {
@@ -31,9 +32,23 @@ export default function UsersPage() {
     }
   };
 
+  const resolveId = (u: UserItem) => u.user_id ?? u.id;
+
+  const toggleStatus = async (u: UserItem) => {
+    const uid = resolveId(u);
+    setTogglingId(uid);
+    try {
+      await userService.updateStatus(uid, !u.is_active);
+      setUsers((prev) => prev.map((x) => resolveId(x) === uid ? { ...x, is_active: !u.is_active } : x));
+    } catch {
+      // no-op — keep existing state
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
   useEffect(() => {
     loadUsers();
-    console.log(users);
   }, []);
 
   const filtered = users.filter((u) =>
@@ -103,7 +118,7 @@ export default function UsersPage() {
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ borderBottom: "1px solid var(--hh-border)" }}>
-                    {["Name", "Email", "Role", "Status", "Joined"].map((h) => (
+                    {["Name", "Email", "Role", "Status", "Joined", "Actions"].map((h) => (
                       <th
                         key={h}
                         style={{
@@ -126,7 +141,7 @@ export default function UsersPage() {
                   {filtered.length === 0 && (
                     <tr>
                       <td
-                        colSpan={5}
+                        colSpan={6}
                         style={{
                           padding: 24,
                           color: "var(--hh-text-muted)",
@@ -139,7 +154,7 @@ export default function UsersPage() {
                   )}
                   {filtered.map((u) => (
                     <tr
-                      key={u.id}
+                      key={resolveId(u)}
                       style={{ borderBottom: "1px solid var(--hh-border)" }}
                     >
                       <td
@@ -190,6 +205,26 @@ export default function UsersPage() {
                         }}
                       >
                         {new Date(u.created_at).toLocaleDateString()}
+                      </td>
+                      <td style={{ padding: "14px 20px" }}>
+                        <button
+                          onClick={() => toggleStatus(u)}
+                          disabled={togglingId === resolveId(u)}
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 600,
+                            padding: "4px 12px",
+                            borderRadius: 6,
+                            border: "1px solid",
+                            cursor: togglingId === resolveId(u) ? "not-allowed" : "pointer",
+                            background: "transparent",
+                            borderColor: u.is_active ? "var(--hh-error)" : "var(--hh-text-green)",
+                            color: u.is_active ? "var(--hh-error)" : "var(--hh-text-green)",
+                            opacity: togglingId === resolveId(u) ? 0.5 : 1,
+                          }}
+                        >
+                          {togglingId === resolveId(u) ? "..." : u.is_active ? "Disable" : "Enable"}
+                        </button>
                       </td>
                     </tr>
                   ))}
