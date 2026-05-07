@@ -682,3 +682,51 @@ export function deleteAdminNotification(token: string, notificationId: number) {
     token,
   );
 }
+
+export interface FitnessGoal {
+  goal_id: number;
+  user_id: number;
+  goal_type: string;
+  target_value: number | null;
+  target_unit: string | null;
+  deadline: string | null;
+  status: "active" | "completed" | "deleted";
+  created_at: string;
+  updated_at: string;
+}
+
+export function fetchFitnessGoals(token: string) {
+  return apiRequest<{ Goals: FitnessGoal[] }>("/fitnessgoal", { method: "GET" }, token);
+}
+
+export function createFitnessGoal(token: string, payload: {
+  goal_type: string;
+  target_value?: number | null;
+  target_unit?: string | null;
+  deadline?: string | null;
+  status?: string;
+}) {
+  return apiRequest<FitnessGoal>("/fitnessgoal", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  }, token);
+}
+
+export function updateFitnessGoal(token: string, goalId: number, payload: Partial<{
+  goal_type: string;
+  target_value: number | null;
+  target_unit: string | null;
+  deadline: string | null;
+  status: string;
+}>) {
+  return apiRequest<{ Success: string }>(`/fitnessgoal/${goalId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  }, token);
+}
+
+export function deleteFitnessGoal(token: string, goalId: number) {
+  return apiRequest<{ Success: string }>(`/fitnessgoal/${goalId}`, {
+    method: "DELETE",
+  }, token);
+}
