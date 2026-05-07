@@ -163,7 +163,7 @@ export default function ActivityCharts({ daily, totals, period, onPeriodChange, 
                   <CartesianGrid strokeDasharray="3 3" stroke={BORDER} vertical={false} />
                   <XAxis dataKey="date" tick={{ fill: MUTED, fontSize: 11 }} tickLine={false} axisLine={false} />
                   <YAxis tick={{ fill: MUTED, fontSize: 11 }} tickLine={false} axisLine={false} />
-                  <Tooltip {...tip} formatter={(v: number) => [`${v} min`, "Cardio"]} />
+                  <Tooltip {...tip} formatter={(v) => [`${v} min`, "Cardio"]} />
                   <Bar dataKey="minutes" fill={BLUE} radius={[4, 4, 0, 0]} maxBarSize={24} />
                 </BarChart>
               </ResponsiveContainer>
@@ -177,7 +177,7 @@ export default function ActivityCharts({ daily, totals, period, onPeriodChange, 
                   <CartesianGrid strokeDasharray="3 3" stroke={BORDER} vertical={false} />
                   <XAxis dataKey="date" tick={{ fill: MUTED, fontSize: 11 }} tickLine={false} axisLine={false} />
                   <YAxis tick={{ fill: MUTED, fontSize: 11 }} tickLine={false} axisLine={false} />
-                  <Tooltip {...tip} formatter={(v: number) => [`${v} kcal`, "Calories"]} />
+                  <Tooltip {...tip} formatter={(v) => [`${v} kcal`, "Calories"]} />
                   <Bar dataKey="calories" fill={ORANGE} radius={[4, 4, 0, 0]} maxBarSize={24} />
                 </BarChart>
               </ResponsiveContainer>
@@ -189,7 +189,7 @@ export default function ActivityCharts({ daily, totals, period, onPeriodChange, 
                   <CartesianGrid strokeDasharray="3 3" stroke={BORDER} />
                   <XAxis dataKey="date" tick={{ fill: MUTED, fontSize: 11 }} tickLine={false} axisLine={false} />
                   <YAxis tick={{ fill: MUTED, fontSize: 11 }} tickLine={false} axisLine={false} />
-                  <Tooltip {...tip} formatter={(v: number) => [`${v.toLocaleString()}`, "Steps"]} />
+                  <Tooltip {...tip} formatter={(v) => [Number(v).toLocaleString(), "Steps"]} />
                   <Line type="monotone" dataKey="steps" stroke={GREEN} strokeWidth={2} dot={{ fill: GREEN, r: 3 }} activeDot={{ r: 5 }} />
                 </LineChart>
               </ResponsiveContainer>

@@ -124,7 +124,7 @@ export default function ProgressCharts({ entries, loading }: Props) {
               <CartesianGrid strokeDasharray="3 3" stroke={BORDER} />
               <XAxis dataKey="date" tick={{ fill: MUTED, fontSize: 11 }} tickLine={false} axisLine={false} />
               <YAxis tick={{ fill: MUTED, fontSize: 11 }} tickLine={false} axisLine={false} domain={["auto", "auto"]} />
-              <Tooltip {...tooltipStyle} formatter={(v: number) => [`${v} lb`, "Weight"]} />
+              <Tooltip {...tooltipStyle} formatter={(v) => [`${v} lb`, "Weight"]} />
               <Line
                 type="monotone"
                 dataKey="weight"
@@ -147,7 +147,7 @@ export default function ProgressCharts({ entries, loading }: Props) {
                 <CartesianGrid strokeDasharray="3 3" stroke={BORDER} vertical={false} />
                 <XAxis dataKey="date" tick={{ fill: MUTED, fontSize: 11 }} tickLine={false} axisLine={false} />
                 <YAxis tick={{ fill: MUTED, fontSize: 11 }} tickLine={false} axisLine={false} />
-                <Tooltip {...tooltipStyle} formatter={(v: number) => [`${v} kcal`, "Calories"]} />
+                <Tooltip {...tooltipStyle} formatter={(v) => [`${v} kcal`, "Calories"]} />
                 <Bar dataKey="calories" fill={ORANGE} radius={[4, 4, 0, 0]} maxBarSize={32} />
               </BarChart>
             </ResponsiveContainer>
@@ -159,7 +159,7 @@ export default function ProgressCharts({ entries, loading }: Props) {
                 <CartesianGrid strokeDasharray="3 3" stroke={BORDER} vertical={false} />
                 <XAxis dataKey="date" tick={{ fill: MUTED, fontSize: 11 }} tickLine={false} axisLine={false} />
                 <YAxis allowDecimals={false} tick={{ fill: MUTED, fontSize: 11 }} tickLine={false} axisLine={false} />
-                <Tooltip {...tooltipStyle} formatter={(v: number) => [v, "Workouts"]} />
+                <Tooltip {...tooltipStyle} formatter={(v) => [v, "Workouts"]} />
                 <Bar dataKey="workouts" fill={GREEN} radius={[4, 4, 0, 0]} maxBarSize={32} />
               </BarChart>
             </ResponsiveContainer>
@@ -175,7 +175,7 @@ export default function ProgressCharts({ entries, loading }: Props) {
               <CartesianGrid strokeDasharray="3 3" stroke={BORDER} vertical={false} />
               <XAxis dataKey="date" tick={{ fill: MUTED, fontSize: 11 }} tickLine={false} axisLine={false} />
               <YAxis allowDecimals={false} domain={[0, 1]} tickCount={2} tick={{ fill: MUTED, fontSize: 11 }} tickLine={false} axisLine={false} />
-              <Tooltip {...tooltipStyle} formatter={(v: number) => [v === 1 ? "Yes" : "No", "Goal Met"]} />
+              <Tooltip {...tooltipStyle} formatter={(v) => [Number(v) === 1 ? "Yes" : "No", "Goal Met"]} />
               <Bar dataKey="goal" fill={ACCENT} radius={[4, 4, 0, 0]} maxBarSize={28} />
             </BarChart>
           </ResponsiveContainer>
